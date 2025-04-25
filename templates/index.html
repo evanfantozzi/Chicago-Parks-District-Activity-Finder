@@ -355,6 +355,7 @@
 <script>
     window.userLocationMarker = null;
     window.mapMarkers = [];
+    window.allParkNames = {{ park_names|tojson }};
   
     function initializeMap() {
       window.map = L.map("map").setView([41.8781, -87.6298], 11.5);
@@ -476,7 +477,7 @@
           })
             .then((res) => res.json())
             .then((data) => {
-                populateParkDropdown(data, userLatLng);
+                populateParkDropdown(userLatLng);
                 const parkNames = data.map(p => p.name.trim().toLowerCase());
               document.querySelectorAll('input[name="parks"]').forEach(cb => {
                 cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
@@ -582,22 +583,26 @@ function haversineDistance(coord1, coord2) {
   return R * c;
 }
 
-function populateParkDropdown(parks, userLatLng) {
+function populateParkDropdown(userLatLng) {
   const dropdown = document.getElementById("parks-dropdown");
 
-  // Keep the search box and park list, remove only old labels
+  // Keep the search input, remove all existing park labels
   dropdown.querySelectorAll("label").forEach(el => el.remove());
 
-  // Sort parks by distance
-  parks.sort((a, b) => {
-    const distA = haversineDistance(userLatLng, [a.latitude, a.longitude]);
-    const distB = haversineDistance(userLatLng, [b.latitude, b.longitude]);
-    return distA - distB;
-  });
+  let parks = window.allParkNames.map(name => ({ name: name }));
 
-  // Add new parks
+  if (userLatLng) {
+    parks.sort((a, b) => {
+      const distA = haversineDistance(userLatLng, [a.latitude, a.longitude]);
+      const distB = haversineDistance(userLatLng, [b.latitude, b.longitude]);
+      return distA - distB;
+    });
+  } else {
+    parks.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   parks.forEach(p => {
-    const distanceMiles = haversineDistance(userLatLng, [p.latitude, p.longitude]);
+    const distanceText = userLatLng ? ` (${haversineDistance(userLatLng, [41.8781, -87.6298]).toFixed(1)} mi)` : '';
     const label = document.createElement("label");
 
     const checkbox = document.createElement("input");
@@ -606,8 +611,8 @@ function populateParkDropdown(parks, userLatLng) {
     checkbox.value = p.name;
 
     label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(` ${p.name} (${distanceMiles.toFixed(1)} mi)`));
-    dropdown.insertBefore(label, dropdown.querySelector("#park-list")); // insert before park list
+    label.appendChild(document.createTextNode(` ${p.name}${distanceText}`));
+    dropdown.insertBefore(label, dropdown.querySelector("#park-list"));
   });
 }
 
