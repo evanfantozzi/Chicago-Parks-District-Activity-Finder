@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-# Install system libraries and mod_spatialite
+# Install system libraries, Python, and mod_spatialite
 RUN apt-get update && apt-get install -y \
   python3.11 \
   python3.11-venv \
@@ -13,28 +13,28 @@ RUN apt-get update && apt-get install -y \
   libsqlite3-mod-spatialite \
   && rm -rf /var/lib/apt/lists/*
 
-# Set up working directory
+# Set working directory
 WORKDIR /app
 
+# Copy app code
 COPY . .
 
-# Download your hosted video
-RUN mkdir -p static && \
-    wget --no-check-certificate \
-    "https://drive.google.com/uc?export=download&id=1NRg29suCuBUpzDx2ShO5GyWx08jDeBz_" \
-    -O static/video.mp4
-
-# Install Python dependencies
+# ✅ Install Python deps
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ Validate extension loads successfully from known Ubuntu path
+# ✅ Install gdown and download the .mp4 reliably from Google Drive
+RUN pip install gdown && \
+    mkdir -p static && \
+    gdown --id 1NRg29suCuBUpzDx2ShO5GyWx08jDeBz_ -O static/video.mp4
+
+# ✅ Confirm mod_spatialite loads correctly
 RUN echo "SELECT load_extension('/usr/lib/x86_64-linux-gnu/mod_spatialite');" | sqlite3 :memory:
 
-# ✅ Set path for your Python app
+# ✅ Set for runtime use
 ENV SPATIALITE_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite
 
-# Optional for local dev
+# Optional: expose port
 EXPOSE 10000
 
-# Start Flask app
+# ✅ Start your Flask app
 CMD ["gunicorn", "app:app"]
