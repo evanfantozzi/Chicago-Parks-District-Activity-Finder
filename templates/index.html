@@ -355,7 +355,7 @@
 <script>
     window.userLocationMarker = null;
     window.mapMarkers = [];
-    window.allParkNames = {{ park_names|tojson }};
+    window.allParks = {{ parks|tojson }};
   
     function initializeMap() {
       window.map = L.map("map").setView([41.8781, -87.6298], 11.5);
@@ -586,11 +586,12 @@ function haversineDistance(coord1, coord2) {
 function populateParkDropdown(userLatLng) {
   const dropdown = document.getElementById("parks-dropdown");
 
-  // Keep the search input, remove all existing park labels
+  // Remove all existing park labels
   dropdown.querySelectorAll("label").forEach(el => el.remove());
 
-  let parks = window.allParkNames.map(name => ({ name: name }));
+  const parks = [...window.allParks]; // use full objects
 
+  // Sort by distance if user location is known
   if (userLatLng) {
     parks.sort((a, b) => {
       const distA = haversineDistance(userLatLng, [a.latitude, a.longitude]);
@@ -602,19 +603,24 @@ function populateParkDropdown(userLatLng) {
   }
 
   parks.forEach(p => {
-    const distanceText = userLatLng ? ` (${haversineDistance(userLatLng, [41.8781, -87.6298]).toFixed(1)} mi)` : '';
     const label = document.createElement("label");
-
     const checkbox = document.createElement("input");
+
     checkbox.type = "checkbox";
     checkbox.name = "parks";
     checkbox.value = p.name;
 
+    const distText = userLatLng
+      ? ` (${haversineDistance(userLatLng, [p.latitude, p.longitude]).toFixed(1)} mi)`
+      : "";
+
     label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(` ${p.name}${distanceText}`));
+    label.appendChild(document.createTextNode(` ${p.name}${distText}`));
+
     dropdown.insertBefore(label, dropdown.querySelector("#park-list"));
   });
 }
+
 
   
     function clearParkSelection() {

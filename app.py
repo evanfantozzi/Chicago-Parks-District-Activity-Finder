@@ -50,8 +50,11 @@ def index():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    cur.execute("SELECT DISTINCT name FROM parks ORDER BY name")
-    park_names = [row[0] for row in cur.fetchall()]
+    cur.execute("SELECT name, latitude, longitude FROM parks")
+    parks = [
+    {"name": name, "latitude": latitude, "longitude": longitude}
+    for name, latitude, longitude in cur.fetchall()
+]
     open_spots = 1 # placeholder
 
     cur.execute("""
@@ -95,10 +98,10 @@ def index():
         return redirect(url_for("results"))
 
     return render_template(INDEX_PATH,
-                           park_names=park_names,
-                           activity_names=activity_names,
-                           age_groups=age_groups,
-                           open_spots=open_spots)
+                       parks=parks,
+                       activity_names=activity_names,
+                       age_groups=age_groups,
+                       open_spots=open_spots)
 
 
 @app.route("/results")
