@@ -16,25 +16,19 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy app code
+# Copy app code (including your image in /static)
 COPY . .
 
-# ✅ Install Python deps
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ Install gdown and download the .mp4 reliably from Google Drive
-RUN pip install gdown && \
-    mkdir -p static && \
-    gdown --id 1NRg29suCuBUpzDx2ShO5GyWx08jDeBz_ -O static/video.mp4
-
-# ✅ Confirm mod_spatialite loads correctly
+# Confirm mod_spatialite loads
 RUN echo "SELECT load_extension('/usr/lib/x86_64-linux-gnu/mod_spatialite');" | sqlite3 :memory:
 
-# ✅ Set for runtime use
+# Set extension path for use in app
 ENV SPATIALITE_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite
 
-# Optional: expose port
 EXPOSE 10000
 
-# ✅ Start your Flask app
+# Start Flask app
 CMD ["gunicorn", "app:app"]

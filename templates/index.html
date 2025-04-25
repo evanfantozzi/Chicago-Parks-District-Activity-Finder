@@ -690,10 +690,7 @@
   
 </head>
 <body>
-<video autoplay muted loop id="bg-video">
-    <source src="static/video.mp4" type="video/mp4" />
-    Your browser does not support HTML5 video.
-    </video>
+    <img src="{{ url_for('static', filename='background.jpg') }}" alt="Background" id="bg-image" />
     <div class="section-header">
         <h1>Find Available Activities in Chicago</h1>
       </div>
