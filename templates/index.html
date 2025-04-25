@@ -610,6 +610,9 @@ function populateParkDropdown(userLatLng) {
     checkbox.name = "parks";
     checkbox.value = p.name;
 
+    // 🆕 Add event listener to update map when user manually checks/unchecks
+    checkbox.addEventListener("change", updateMapFromManualSelection);
+
     const distText = userLatLng
       ? ` (${haversineDistance(userLatLng, [p.latitude, p.longitude]).toFixed(1)} mi)`
       : "";
