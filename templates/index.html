@@ -525,26 +525,44 @@
       }
     }
   
-    function renderParkList(data) {
-      const parkList = document.getElementById("park-list");
-      parkList.innerHTML = "";
-  
-      data.forEach((p, index) => {
+    function renderParkList(data, userLatLng = null) {
+    const parkList = document.getElementById("park-list");
+    parkList.innerHTML = "";
+
+    if (userLatLng) {
+        // Sort data by distance to user
+        data.sort((a, b) => {
+        const distA = Math.sqrt(
+            Math.pow(a.latitude - userLatLng[0], 2) +
+            Math.pow(a.longitude - userLatLng[1], 2)
+        );
+        const distB = Math.sqrt(
+            Math.pow(b.latitude - userLatLng[0], 2) +
+            Math.pow(b.longitude - userLatLng[1], 2)
+        );
+        return distA - distB;
+        });
+    } else {
+        // fallback: sort alphabetically
+        data.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    data.forEach((p, index) => {
         const li = document.createElement("li");
         li.textContent = p.name;
         li.style.cursor = "pointer";
         li.style.marginBottom = "0.4em";
-  
+
         li.addEventListener("click", () => {
-          window.mapMarkers[index].openPopup();
-          window.map.setView([p.latitude, p.longitude], 14);
+        window.mapMarkers[index].openPopup();
+        window.map.setView([p.latitude, p.longitude], 14);
         });
-  
+
         parkList.appendChild(li);
-      });
-  
-      document.getElementById("clear-parks-btn").style.display = data.length > 0 ? "block" : "none";
-    }
+    });
+
+  document.getElementById("clear-parks-btn").style.display = data.length > 0 ? "block" : "none";
+}
   
     function clearParkSelection() {
       window.isClearingParks = true;
