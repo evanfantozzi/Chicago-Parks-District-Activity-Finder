@@ -1,0 +1,98 @@
+type,activity,city_id
+ActivityOtherCategoryID,Administration - Permit,97
+ActivityOtherCategoryID,Aquatics - Event,100
+ActivityOtherCategoryID,Aquatics - Fitness,82
+ActivityOtherCategoryID,Aquatics - Lessons,2
+ActivityOtherCategoryID,Aquatics - Open,1
+ActivityOtherCategoryID,Aquatics - Rowing,104
+ActivityOtherCategoryID,Aquatics - Sailing,4
+ActivityOtherCategoryID,Aquatics - Specialized,3
+ActivityOtherCategoryID,Camps - General Interest,5
+ActivityOtherCategoryID,Camps - Special Interest,6
+ActivityOtherCategoryID,Camps - Sports,7
+ActivityOtherCategoryID,Culture and Arts - Creative Writing,9
+ActivityOtherCategoryID,Culture and Arts - Dance,10
+ActivityOtherCategoryID,Culture and Arts - Decorative Arts,11
+ActivityOtherCategoryID,Culture and Arts - Drawing,12
+ActivityOtherCategoryID,Culture and Arts - Event - Art Exhibit,88
+ActivityOtherCategoryID,Culture and Arts - Event - Art Fair,89
+ActivityOtherCategoryID,Culture and Arts - Event - Dance,84
+ActivityOtherCategoryID,Culture and Arts - Event - Movies,87
+ActivityOtherCategoryID,Culture and Arts - Event - Music,85
+ActivityOtherCategoryID,Culture and Arts - Event - Theater,86
+ActivityOtherCategoryID,Culture and Arts - Literary Art,83
+ActivityOtherCategoryID,Culture and Arts - Music,13
+ActivityOtherCategoryID,Culture and Arts - Painting,14
+ActivityOtherCategoryID,Culture and Arts - Photography,15
+ActivityOtherCategoryID,Culture and Arts - Printmaking,16
+ActivityOtherCategoryID,Culture and Arts - Sculpture,17
+ActivityOtherCategoryID,Culture and Arts - Textiles,18
+ActivityOtherCategoryID,Culture and Arts - Theater,19
+ActivityOtherCategoryID,Culture and Arts - Video,20
+ActivityOtherCategoryID,Culture and Arts - Woodworking,78
+ActivityOtherCategoryID,Early Childhood - Recreation,22
+ActivityOtherCategoryID,General Event - Banquets,94
+ActivityOtherCategoryID,General Event - Community Meetings,92
+ActivityOtherCategoryID,General Event - Community Service,102
+ActivityOtherCategoryID,General Event - Family Fun,99
+ActivityOtherCategoryID,General Event - Festivals,90
+ActivityOtherCategoryID,General Event - Holidays,91
+ActivityOtherCategoryID,General Event - Other,95
+ActivityOtherCategoryID,General Event - Tours,93
+ActivityOtherCategoryID,Gymnastics - Competitive,24
+ActivityOtherCategoryID,Gymnastics - Event,23
+ActivityOtherCategoryID,Gymnastics - Recreational,29
+ActivityOtherCategoryID,Gymnastics - Tumbling,28
+ActivityOtherCategoryID,Out of School Programs - After School,34
+ActivityOtherCategoryID,Outdoor & Environment - Education,41
+ActivityOtherCategoryID,Outdoor & Environment - Event,38
+ActivityOtherCategoryID,Outdoor & Environment - Gardening,44
+ActivityOtherCategoryID,Special Interest - Clubs,50
+ActivityOtherCategoryID,Special Interest - Educational/Self-Help,52
+ActivityOtherCategoryID,Special Interest - Fun & Games,55
+ActivityOtherCategoryID,Special Interest - Self-Defense,56
+ActivityOtherCategoryID,Sports - Archery,63
+ActivityOtherCategoryID,Sports - Badminton,76
+ActivityOtherCategoryID,Sports - Baseball,75
+ActivityOtherCategoryID,Sports - Basketball,74
+ActivityOtherCategoryID,Sports - Bocce,72
+ActivityOtherCategoryID,Sports - Bowling,71
+ActivityOtherCategoryID,Sports - Boxing,70
+ActivityOtherCategoryID,Sports - Cheerleading,69
+ActivityOtherCategoryID,Sports - Dodgeball,68
+ActivityOtherCategoryID,Sports - Double Dutch,67
+ActivityOtherCategoryID,Sports - Event,61
+ActivityOtherCategoryID,Sports - Fencing,66
+ActivityOtherCategoryID,Sports - Floor Hockey,77
+ActivityOtherCategoryID,Sports - Football,65
+ActivityOtherCategoryID,Sports - Golf,64
+ActivityOtherCategoryID,Sports - Hockey,62
+ActivityOtherCategoryID,Sports - Kickball,60
+ActivityOtherCategoryID,Sports - Lacrosse,59
+ActivityOtherCategoryID,Sports - Officiating,57
+ActivityOtherCategoryID,Sports - Pickleball,96
+ActivityOtherCategoryID,Sports - Racquetball,54
+ActivityOtherCategoryID,Sports - Seasonal Sports,53
+ActivityOtherCategoryID,Sports - Skating,51
+ActivityOtherCategoryID,Sports - Soccer,49
+ActivityOtherCategoryID,Sports - Softball,48
+ActivityOtherCategoryID,Sports - Special Olympics,46
+ActivityOtherCategoryID,Sports - Table Tennis,45
+ActivityOtherCategoryID,Sports - Tennis,43
+ActivityOtherCategoryID,Sports - Track & Field,42
+ActivityOtherCategoryID,Sports - Volleyball,40
+ActivityOtherCategoryID,Sports - Weightlifting,39
+ActivityOtherCategoryID,Sports - Wrestling,37
+ActivityOtherCategoryID,Wellness - Aerobics,35
+ActivityOtherCategoryID,Wellness - Event,36
+ActivityOtherCategoryID,Wellness - Fitness,33
+ActivityOtherCategoryID,Wellness - Nutrition,31
+ActivityOtherCategoryID,Wellness - Walking,30
+ActivityOtherCategoryID,Wellness - Yoga,27
+ActivityCategoryID,Adult,1
+ActivityCategoryID,All Ages,2
+ActivityCategoryID,Early Childhood,3
+ActivityCategoryID,Senior,4
+ActivityCategoryID,Teen,5
+ActivityCategoryID,Young Adult,7
+ActivityCategoryID,Youth,6
