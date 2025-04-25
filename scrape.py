@@ -4,6 +4,7 @@ import json
 import time
 from datetime import datetime
 from datetime import time as dtime
+import os
 
 class ActivityScraper:
     def __init__(self, 
@@ -71,7 +72,7 @@ class ActivityScraper:
     def get_sqlite_connection(self):
         conn = sqlite3.connect(self.db_path)
         conn.enable_load_extension(True)
-        conn.load_extension("/opt/homebrew/lib/mod_spatialite.dylib")
+        conn.load_extension(os.getenv("SPATIALITE_PATH", "mod_spatialite")) 
         return conn
 
     def set_park_ids_by_distance(self, distance_miles=5, distance_km=0):
