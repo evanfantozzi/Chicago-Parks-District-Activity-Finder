@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# Install dependencies and build tools
 RUN apt-get update && apt-get install -y \
   gcc \
   g++ \
@@ -12,7 +13,6 @@ RUN apt-get update && apt-get install -y \
   libreadline-dev \
   libcurl4-gnutls-dev \
   libspatialite-dev \
-  mod-spatialite \
   wget \
   sqlite3 \
   && rm -rf /var/lib/apt/lists/*
@@ -21,6 +21,7 @@ WORKDIR /app
 
 COPY . .
 
+# Pull in your .mp4 from Drive
 RUN mkdir -p static && \
     wget --no-check-certificate \
     "https://drive.google.com/uc?export=download&id=1NRg29suCuBUpzDx2ShO5GyWx08jDeBz_" \
@@ -28,10 +29,11 @@ RUN mkdir -p static && \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ This is the correct path for mod_spatialite on Debian
-RUN echo "SELECT load_extension('/usr/lib/x86_64-linux-gnu/mod_spatialite');" | sqlite3 :memory:
+# ✅ Use the default .so path installed by libspatialite-dev
+# (This is where mod_spatialite ends up when built with SQLite extension support)
+RUN echo "SELECT load_extension('/usr/lib/x86_64-linux-gnu/mod_spatialite.so');" | sqlite3 :memory:
 
-ENV SPATIALITE_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite
+ENV SPATIALITE_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite.so
 
 EXPOSE 10000
 
