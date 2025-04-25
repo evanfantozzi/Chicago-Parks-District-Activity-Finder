@@ -457,40 +457,47 @@
     }
   
     function loadNearbyParks() {
-      const radiusInput = document.querySelector('input[name="distance"]');
-      const radius = parseFloat(radiusInput?.value || "2");
-  
-      if (!navigator.geolocation) return;
-  
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const userLatLng = [pos.coords.latitude, pos.coords.longitude];
-  
-          fetch("/nearby_parks", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude,
-              radius: radius,
-            }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-                populateParkDropdown(userLatLng);
-                const parkNames = data.map(p => p.name.trim().toLowerCase());
-              document.querySelectorAll('input[name="parks"]').forEach(cb => {
-                cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
-              });
-  
-              updateSummary();
-              renderMapMarkers(data, userLatLng);
-              renderParkList(data);
-            });
-        },
-        (err) => console.warn("Geolocation error", err)
-      );
+  const radiusInput = document.querySelector('input[name="distance"]');
+  const radius = parseFloat(radiusInput?.value || "2");
+
+  if (!navigator.geolocation) {
+    populateParkDropdown(null);  // fallback to alphabetical if geolocation not supported
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const userLatLng = [pos.coords.latitude, pos.coords.longitude];
+
+      fetch("/nearby_parks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          radius: radius,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          populateParkDropdown(userLatLng); // sort by distance
+          const parkNames = data.map(p => p.name.trim().toLowerCase());
+          document.querySelectorAll('input[name="parks"]').forEach(cb => {
+            cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
+          });
+
+          updateSummary();
+          renderMapMarkers(data, userLatLng);
+          renderParkList(data);
+        });
+    },
+    (err) => {
+      console.warn("Geolocation error", err);
+      populateParkDropdown(null);  // fallback to alphabetical if geolocation fails
     }
+  );
+}
+
   
     function renderMapMarkers(data, userLatLng = null, centerView = true) {
       if (!window.map) return;
