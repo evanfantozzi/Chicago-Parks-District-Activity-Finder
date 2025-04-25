@@ -476,7 +476,8 @@
           })
             .then((res) => res.json())
             .then((data) => {
-              const parkNames = data.map(p => p.name.trim().toLowerCase());
+                populateParkDropdown(data, userLatLng);
+                const parkNames = data.map(p => p.name.trim().toLowerCase());
               document.querySelectorAll('input[name="parks"]').forEach(cb => {
                 cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
               });
@@ -563,6 +564,53 @@
 
   document.getElementById("clear-parks-btn").style.display = data.length > 0 ? "block" : "none";
 }
+
+function haversineDistance(coord1, coord2) {
+  const R = 3958.8; // Radius of the Earth in miles
+  const toRad = (x) => (x * Math.PI) / 180;
+
+  const dLat = toRad(coord2[0] - coord1[0]);
+  const dLon = toRad(coord2[1] - coord1[1]);
+  const lat1 = toRad(coord1[0]);
+  const lat2 = toRad(coord2[0]);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+function populateParkDropdown(parks, userLatLng) {
+  const dropdown = document.getElementById("parks-dropdown");
+
+  // Keep the search box and park list, remove only old labels
+  dropdown.querySelectorAll("label").forEach(el => el.remove());
+
+  // Sort parks by distance
+  parks.sort((a, b) => {
+    const distA = haversineDistance(userLatLng, [a.latitude, a.longitude]);
+    const distB = haversineDistance(userLatLng, [b.latitude, b.longitude]);
+    return distA - distB;
+  });
+
+  // Add new parks
+  parks.forEach(p => {
+    const distanceMiles = haversineDistance(userLatLng, [p.latitude, p.longitude]);
+    const label = document.createElement("label");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "parks";
+    checkbox.value = p.name;
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(` ${p.name} (${distanceMiles.toFixed(1)} mi)`));
+    dropdown.insertBefore(label, dropdown.querySelector("#park-list")); // insert before park list
+  });
+}
+
   
     function clearParkSelection() {
       window.isClearingParks = true;
@@ -803,16 +851,12 @@
         <label style="margin-bottom: 0.3rem;"></label>
         <div class="dropdown-checkbox dropdown-up">
             <div class="dropdown-toggle"> <span class="example">(Optional) Add or remove specific parks/facilities</span></div>
-            <div class="dropdown-content">
-            <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
-            {% for name in park_names %}
-              <label><input type="checkbox" name="parks" value="{{ name }}"> {{ name }}</label>
-            {% endfor %}
-  
-        <ul id="park-list" style="margin-top: 1rem; list-style: none; padding-left: 0;"></ul>
-      </div>
-  
-    </div>
+            <div class="dropdown-content" id="parks-dropdown">
+              <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
+              <!-- dynamic parks will be inserted here -->
+              <ul id="park-list" style="margin-top: 1rem; list-style: none; padding-left: 0;"></ul>
+            </div>
+        </div>          
 </div>
 
 <div style="width: 100%; margin-top: 0.0rem;">
