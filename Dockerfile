@@ -33,14 +33,13 @@ RUN mkdir -p static && \
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Find and symlink mod_spatialite.so correctly (robust version)
-RUN bash -c "\
-  echo '🔍 Searching for mod_spatialite .so files:' && \
-  find /usr -name 'mod_spatialite*.so*' && \
-  MOD_PATH=\$(find /usr -name 'mod_spatialite*.so*' | grep -E '\.so([0-9]*|$)' | head -n 1) && \
-  echo '✅ Found mod_spatialite at: '\$MOD_PATH && \
-  ln -sf \$MOD_PATH /usr/lib/mod_spatialite.so && \
-  echo \"SELECT load_extension('/usr/lib/mod_spatialite.so');\" | sqlite3 :memory:"
+# Find and symlink mod_spatialite.so (quote-safe version)
+RUN echo "🔍 Searching for mod_spatialite .so files:" && \
+    find /usr -name "mod_spatialite*.so*" && \
+    MOD_PATH=$(find /usr -name "mod_spatialite*.so*" | grep -E '\.so([0-9]*|$)' | head -n 1) && \
+    echo "✅ Found mod_spatialite at: $MOD_PATH" && \
+    ln -sf "$MOD_PATH" /usr/lib/mod_spatialite.so && \
+    echo "SELECT load_extension('/usr/lib/mod_spatialite.so');" | sqlite3 :memory:
 
 # Set the path for Python to use in your app
 ENV SPATIALITE_PATH=/usr/lib/mod_spatialite.so
