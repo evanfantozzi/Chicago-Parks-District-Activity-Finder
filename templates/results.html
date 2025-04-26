@@ -222,66 +222,65 @@
       setTimeout(() => map.invalidateSize(), 200);
     }
 
-    async function loadMoreActivities() {
-      const button = document.getElementById('load-more-btn');
-      button.disabled = true;
-      button.innerText = 'Loading...';
+async function loadMoreActivities() {
+    const button = document.getElementById('load-more-btn');
+    button.disabled = true;
+    button.innerText = 'Loading...';
 
-      // Fetch the updated activities
-      const res = await fetch('/load_more', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_page: {{ session.first_page }} })
-      });
+    const res = await fetch('/load_more', {
+        method: 'POST'
+        // No need to send JSON body since Flask uses session to handle pagination.
+    });
 
-      button.disabled = false;
-      button.innerText = 'Load More Activities';
+    button.disabled = false;
+    button.innerText = 'Load More Activities';
 
-      if (!res.ok) {
+    if (!res.ok) {
         console.error('Failed to load more activities');
         return;
-      }
+    }
 
-      const data = await res.json();
+    const data = await res.json();
 
-      const container = document.getElementById('results-container');
-      data.activities.forEach(activity => {
+    const container = document.getElementById('results-container');
+    data.activities.forEach(activity => {
         const card = document.createElement('div');
         card.className = 'activity-card';
 
         let scheduleRows = '';
         const count = activity.date_ranges.length;
         for (let i = 0; i < count; i++) {
-          scheduleRows += `<tr>
+        scheduleRows += `<tr>
             <td>${activity.date_ranges[i]}${activity.days[i] && activity.days[i].length > 0 ? ` (${activity.days[i].map(d => d.slice(0,2)).join('/')})` : ''}</td>
             <td>${activity.time_ranges[i]}</td>
             <td>${activity.action_links[i] ? `<a href="${activity.action_links[i]}" target="_blank">Register</a>` : '-'}</td>
             <td>${activity.detail_links[i] ? `<a href="${activity.detail_links[i]}" target="_blank">More Info</a>` : '-'}</td>
-          </tr>`;
+        </tr>`;
         }
 
         card.innerHTML = `
-          <div class="card-header">
+        <div class="card-header">
             <h2>${activity.name}</h2>
             <p class="location">${activity.location}</p>
-          </div>
-          <p class="category"><strong>Category:</strong> ${activity.category}</p>
-          <p class="age"><strong>Age:</strong> ${activity.age_description}</p>
-          <div class="schedule">
+        </div>
+        <p class="category"><strong>Category:</strong> ${activity.category}</p>
+        <p class="age"><strong>Age:</strong> ${activity.age_description}</p>
+        <div class="schedule">
             <table><thead><tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr></thead><tbody>${scheduleRows}</tbody></table>
-          </div>
-          <p class="desc">${activity.desc || ''}</p>
+        </div>
+        <p class="desc">${activity.desc || ''}</p>
         `;
 
         container.appendChild(card);
-      });
+    });
 
-      renderMapMarkers(data.activity_parks);
+    renderMapMarkers(data.activity_parks);
 
-      if (!data.more_results_to_fetch) {
+    if (!data.more_results_to_fetch) {
         button.style.display = 'none';
-      }
     }
+    }
+
 
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
