@@ -294,7 +294,7 @@
             renderMapMarkers(data.activity_parks);
 
             // Update currentPage in sessionStorage for the next request
-            sessionStorage.setItem('currentPage', Number(currentPage) + 1);
+            sessionStorage.setItem('currentPage', Number(currentPage) + 5);
 
             // If no more results to fetch, hide the button
             if (!data.more_results_to_fetch) {
