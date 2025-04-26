@@ -91,8 +91,8 @@ def search():
     # turn incoming form into a dict-of-lists so use_scraper always sees lists
     form_data = request.form.to_dict(flat=False)
 
-    # Reset first page to 1 when a new search is made
-    session["first_page"] = 1  # Reset the page number for a new search
+    # Reset first page to 6 when a new search is made (since we always start at page 6)
+    session["first_page"] = 6  # Start at page 6 for the first load
 
     activities, more_results_to_fetch = use_scraper(form_data)
 
@@ -118,9 +118,9 @@ def results():
 def load_more():
     # Get the page number from the request body
     request_data = request.get_json()
-    first_page = int(request_data.get('page'))  # Page sent by the client
+    current_page = int(request_data.get('page'))  # Page sent by the client
 
-    if first_page is None:
+    if current_page is None:
         logging.error("Page number is missing in the request.")
         return jsonify({"error": "Page number is missing"}), 400
 
@@ -130,7 +130,7 @@ def load_more():
         return jsonify({"error": "Missing search parameters"}), 400
 
     # Fetch the activities based on the page number
-    activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=current_page)
 
     # Append the new activities to the existing list in the session
     if "activities" not in session:
@@ -139,7 +139,7 @@ def load_more():
     session["activities"].extend(activities)
 
     # Log current page for debugging
-    logging.debug(f"Fetched activities for page {first_page}. Total activities so far: {len(session['activities'])}")
+    logging.debug(f"Fetched activities for page {current_page}. Total activities so far: {len(session['activities'])}")
 
     # Return the updated data to the client
     return jsonify({
