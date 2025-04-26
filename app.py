@@ -3,11 +3,10 @@ from scrape import ActivityScraper
 from activity_parks import get_activity_parks
 import sqlite3
 from flask_session import Session
-
 import logging
 
-# Set up logging to print to console
-logging.basicConfig(level=logging.DEBUG)
+# Set up basic logging configuration for Flask
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Use a secure key in production
@@ -85,11 +84,15 @@ def index():
                            all_age_groups=all_age_groups,
                            open_spots=1)
 
+
 # "/search" Route: Scrape activities based on user search
 @app.route("/search", methods=["POST"])
 def search():
     # turn incoming form into a dict-of-lists so use_scraper always sees lists
     form_data = request.form.to_dict(flat=False)
+
+    # Reset first page to 1 when a new search is made
+    session["first_page"] = 1  # Reset the page number for a new search
 
     activities, more_results_to_fetch = use_scraper(form_data)
 
@@ -97,7 +100,6 @@ def search():
     session["search_form"] = form_data
     session["activities"] = activities
     session["more_results_to_fetch"] = more_results_to_fetch
-    session["first_page"] = 1
 
     return redirect(url_for("results"))
 
@@ -110,33 +112,42 @@ def results():
     show_load_more = session.get("more_results_to_fetch", False)
     return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks, show_load_more=show_load_more)
 
+
 # "/load_more" Route: Load next batch of activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
-    # Get the current first_page from session (or default to 1)
-    new_first_page = session.get("first_page", 1) + 5
-    session["first_page"] = new_first_page
+    # Get the page number from the request body
+    request_data = request.get_json()
+    current_page = request_data.get('page')  # Page sent by the client
 
-    # Use search_form directly from session
+    if current_page is None:
+        logging.error("Page number is missing in the request.")
+        return jsonify({"error": "Page number is missing"}), 400
+
+    # Fetch the activities for the requested page
     search_form = session.get("search_form", {})
     if not search_form:
         return jsonify({"error": "Missing search parameters"}), 400
 
-    # Fetch activities for the current first_page
-    activities, more_results_to_fetch = use_scraper(search_form, first_page=new_first_page)
+    # Fetch the activities based on the page number
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=current_page)
 
     # Append the new activities to the existing list in the session
+    if "activities" not in session:
+        session["activities"] = []
+
     session["activities"].extend(activities)
-    all_activities = session["activities"]
-    activity_parks = get_activity_parks(activities)
-    session["more_results_to_fetch"] = more_results_to_fetch
+
+    # Log current page for debugging
+    logging.debug(f"Fetched activities for page {current_page}. Total activities so far: {len(session['activities'])}")
 
     # Return the updated data to the client
     return jsonify({
-        "activities": all_activities,
-        "activity_parks": activity_parks,
+        "activities": activities,  # Send only the activities for this page
+        "activity_parks": get_activity_parks(activities),
         "more_results_to_fetch": more_results_to_fetch
     })
+
 
 # "/find_nearby_parks" Route: Help users find nearby parks
 @app.route("/find_nearby_parks", methods=["POST"])
@@ -164,6 +175,7 @@ def find_nearby_parks():
         {"name": name, "latitude": latitude, "longitude": longitude}
         for name, latitude, longitude in results
     ])
+
 
 if __name__ == "__main__":
     app.run(debug=True)

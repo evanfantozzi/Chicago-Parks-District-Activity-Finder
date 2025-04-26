@@ -128,7 +128,7 @@
 <body>
   <div id="results">
     <h1>Matching Activities</h1>
-    <a href="/" class="back-link">← Back to Search</a>
+    <a href="/" class="back-link" onclick="resetPage();">← Back to Search</a>
 
     {% if activities %}
     <div id="results-container">
@@ -228,15 +228,22 @@
         button.innerText = 'Loading...';
 
         try {
+            // Get the current page number from sessionStorage (or default to 1)
+            let currentPage = sessionStorage.getItem('currentPage') || 1;
+
+            // Send the current page number in the request body
             const res = await fetch('/load_more', {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ page: currentPage })  // Pass the current page
             });
 
             button.disabled = false;
             button.innerText = 'Load More Activities';
 
             if (!res.ok) {
-                // Log the error response from the server
                 const errorText = await res.text();
                 console.error(`Failed to load more activities. Status: ${res.status}. Response: ${errorText}`);
                 return;
@@ -244,13 +251,13 @@
 
             const data = await res.json();
 
-            // Check if there is no new data
+            // Check if there are no new activities to load
             if (data.activities && data.activities.length === 0) {
                 console.log('No new activities to load.');
                 return;
             }
 
-            // Use the full activities array returned from the server
+            // Append new activities to the container
             const container = document.getElementById('results-container');
             data.activities.forEach(activity => {
                 const card = document.createElement('div');
@@ -286,6 +293,9 @@
             // Update map markers with new activities
             renderMapMarkers(data.activity_parks);
 
+            // Update currentPage in sessionStorage for the next request
+            sessionStorage.setItem('currentPage', Number(currentPage) + 1);
+
             // If no more results to fetch, hide the button
             if (!data.more_results_to_fetch) {
                 button.style.display = 'none';
@@ -296,6 +306,10 @@
         }
     }
 
+    // Reset page number when a new search is initiated
+    function resetPage() {
+        sessionStorage.setItem('currentPage', 1);  // Reset to the first page
+    }
 
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
