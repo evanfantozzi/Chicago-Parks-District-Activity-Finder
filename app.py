@@ -89,10 +89,10 @@ def search():
     activities, more_results_to_fetch = use_scraper(form_data)
 
     # stash everything in session
-    session["search_form"]           = form_data
-    session["activities"]            = activities
+    session["search_form"] = form_data
+    session["activities"] = activities
     session["more_results_to_fetch"] = more_results_to_fetch
-    session["first_page"]            = 1
+    session["first_page"] = 1
 
     return redirect(url_for("results"))
 
