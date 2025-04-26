@@ -29,7 +29,7 @@ def use_scraper(form_data):
     scraper.get_activities()
     return scraper.activities
 
-@app.route("/nearby_parks", methods=["POST"])
+@app.route("/find_nearby_parks", methods=["POST"])
 def find_nearby_parks():
     data = request.get_json()
     lat, lon = data["lat"], data["lon"]
