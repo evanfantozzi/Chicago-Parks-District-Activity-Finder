@@ -3,7 +3,6 @@ from scrape import ActivityScraper
 from activity_parks import get_activity_parks
 import sqlite3
 from flask_session import Session
-from werkzeug.datastructures import MultiDict  # 🆕 add this import
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Use a secure key in production
@@ -73,6 +72,10 @@ def search():
     session["activities"] = activities
     session["more_results_to_fetch"] = more_results_to_fetch
     session["search_form"] = request.form.to_dict(flat=False)
+
+    # Set the initial first_page as 1 when starting a new search
+    session["first_page"] = 1
+
     return redirect(url_for("results"))
 
 # "/results" Route: Show activities and map
@@ -86,15 +89,14 @@ def results():
 # "/load_more" Route: Load next batch of activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
-    data = request.get_json()
-    page_group = data.get("page_group", 1)
-    first_page = 6 + (page_group - 1) * 5  # 6, 11, 16, etc.
+    # Increment first_page by 5 for each load more action
+    first_page = session.get("first_page", 1) + 5
+    session["first_page"] = first_page
 
+    # Use search_form directly from session
     search_form = session.get("search_form", {})
     if not search_form:
         return jsonify({"error": "Missing search parameters"}), 400
-
-    search_form = MultiDict(search_form)  # 🛠 fix here: wrap back to MultiDict!
 
     activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
     activity_parks = get_activity_parks(activities)
