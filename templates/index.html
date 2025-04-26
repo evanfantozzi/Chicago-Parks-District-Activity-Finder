@@ -469,7 +469,7 @@
     (pos) => {
       const userLatLng = [pos.coords.latitude, pos.coords.longitude];
 
-      fetch("/nearby_parks", {
+      fetch("/find_nearby_parks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -659,7 +659,7 @@ function populateParkDropdown(userLatLng) {
       const selectedParkNames = Array.from(document.querySelectorAll('input[name="parks"]:checked'))
         .map(cb => cb.value.trim().toLowerCase());
   
-      fetch("/nearby_parks", {
+      fetch("/find_nearby_parks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lat: 41.8781, lon: -87.6298, radius: 100 }),
