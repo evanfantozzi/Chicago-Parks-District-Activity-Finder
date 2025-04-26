@@ -228,8 +228,18 @@
         button.innerText = 'Loading...';
 
         try {
-            // Get the current page number from sessionStorage (or default to 1)
-            let currentPage = sessionStorage.getItem('currentPage') || 1;
+            // Get the current page number from sessionStorage (it may be undefined on the first load)
+            let currentPage = parseInt(sessionStorage.getItem('currentPage'));
+
+            // If the page number doesn't exist, it's the first load, so we set it to 6
+            if (isNaN(currentPage)) {
+                currentPage = 6; // Start at page 6 for the first load
+                sessionStorage.setItem('currentPage', currentPage);
+            } else {
+                // If it's not the first load, increment the page by 5
+                currentPage += 5;
+                sessionStorage.setItem('currentPage', currentPage); // Store the new page number
+            }
 
             // Send the current page number in the request body
             const res = await fetch('/load_more', {
@@ -237,7 +247,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ page: currentPage })  // Pass the current page
+                body: JSON.stringify({ page: currentPage })  // Send the current page
             });
 
             button.disabled = false;
@@ -308,7 +318,7 @@
 
     // Reset page number when a new search is initiated
     function resetPage() {
-        sessionStorage.setItem('currentPage', 1);  // Reset to the first page
+        sessionStorage.setItem('currentPage', 6);  // Reset to page 6
     }
 
     document.addEventListener('DOMContentLoaded', initMap);
