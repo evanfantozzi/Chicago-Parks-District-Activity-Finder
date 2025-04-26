@@ -118,9 +118,9 @@ def results():
 def load_more():
     # Get the page number from the request body
     request_data = request.get_json()
-    current_page = request_data.get('page')  # Page sent by the client
+    first_page = int(request_data.get('page'))  # Page sent by the client
 
-    if current_page is None:
+    if first_page is None:
         logging.error("Page number is missing in the request.")
         return jsonify({"error": "Page number is missing"}), 400
 
@@ -130,7 +130,7 @@ def load_more():
         return jsonify({"error": "Missing search parameters"}), 400
 
     # Fetch the activities based on the page number
-    activities, more_results_to_fetch = use_scraper(search_form, first_page=current_page)
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
 
     # Append the new activities to the existing list in the session
     if "activities" not in session:
@@ -139,11 +139,11 @@ def load_more():
     session["activities"].extend(activities)
 
     # Log current page for debugging
-    logging.debug(f"Fetched activities for page {current_page}. Total activities so far: {len(session['activities'])}")
+    logging.debug(f"Fetched activities for page {first_page}. Total activities so far: {len(session['activities'])}")
 
     # Return the updated data to the client
     return jsonify({
-        "activities": activities,  # Send only the activities for this page
+        "activities": activities, 
         "activity_parks": get_activity_parks(activities),
         "more_results_to_fetch": more_results_to_fetch
     })
