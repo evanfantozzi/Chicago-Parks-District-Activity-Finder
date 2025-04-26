@@ -98,6 +98,7 @@ def index():
 def results():
     activities = session.get("activities", [])
     activity_parks = get_activity_parks(activities)
+    
     return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks)
 
 if __name__ == "__main__":
