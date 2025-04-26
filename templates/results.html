@@ -85,8 +85,7 @@
       margin-top: 0.3rem;
     }
 
-    .schedule th,
-    .schedule td {
+    .schedule th, .schedule td {
       padding: 0.25rem 0.5rem;
       vertical-align: top;
     }
@@ -123,19 +122,6 @@
     #load-more-btn:hover {
       background-color: #005fa3;
     }
-
-    /* 🔥 Loading animation */
-    .loading::after {
-      content: '...';
-      animation: dots 1s steps(3, end) infinite;
-    }
-
-    @keyframes dots {
-      0%, 20% { content: ''; }
-      40% { content: '.'; }
-      60% { content: '..'; }
-      80%, 100% { content: '...'; }
-    }
   </style>
 </head>
 
@@ -145,67 +131,62 @@
     <a href="/" class="back-link">← Back to Search</a>
 
     {% if activities %}
-      <div id="results-container">
-        {% for activity in activities %}
-          <div class="activity-card">
-            <div class="card-header">
-              <h2>{{ activity.name }}</h2>
-              <p class="location">{{ activity.location }}</p>
-            </div>
-            <p class="category"><strong>Category:</strong> {{ activity.category }}</p>
-            <p class="age"><strong>Age:</strong> {{ activity.age_description }}</p>
+    <div id="results-container">
+      {% for activity in activities %}
+      <div class="activity-card">
+        <div class="card-header">
+          <h2>{{ activity.name }}</h2>
+          <p class="location">{{ activity.location }}</p>
+        </div>
+        <p class="category"><strong>Category:</strong> {{ activity.category }}</p>
+        <p class="age"><strong>Age:</strong> {{ activity.age_description }}</p>
 
-            <div class="schedule">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Register</th>
-                    <th>More Info</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% set count = activity.date_ranges | length %}
-                  {% for i in range(count) %}
-                    <tr>
-                      <td>
-                        {{ activity.date_ranges[i] }}
-                        {% if activity.days[i] and activity.days[i] | length > 0 %}
-                          ({{ activity.days[i] | map('slice', 0, 2) | map('capitalize') | join("/") }})
-                        {% endif %}
-                      </td>
-                      <td>{{ activity.time_ranges[i] }}</td>
-                      <td>
-                        {% if activity.action_links[i] %}
-                          <a href="{{ activity.action_links[i] }}" target="_blank">Register</a>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if activity.detail_links[i] %}
-                          <a href="{{ activity.detail_links[i] }}" target="_blank">More Info</a>
-                        {% else %}
-                          —
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
+        <div class="schedule">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Register</th>
+                <th>More Info</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in range(activity.date_ranges | length) %}
+              <tr>
+                <td>
+                  {{ activity.date_ranges[i] }}
+                  {% if activity.days[i] and activity.days[i] | length > 0 %}
+                  ({{ activity.days[i] | map('slice', 0, 2) | map('capitalize') | join('/') }})
+                  {% endif %}
+                </td>
+                <td>{{ activity.time_ranges[i] }}</td>
+                <td>
+                  {% if activity.action_links[i] %}
+                  <a href="{{ activity.action_links[i] }}" target="_blank">Register</a>
+                  {% else %}-{% endif %}
+                </td>
+                <td>
+                  {% if activity.detail_links[i] %}
+                  <a href="{{ activity.detail_links[i] }}" target="_blank">More Info</a>
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
-            <p class="desc">{{ activity.desc|safe }}</p>
-          </div>
-        {% endfor %}
+        <p class="desc">{{ activity.desc|safe }}</p>
       </div>
+      {% endfor %}
+    </div>
 
-      {% if show_load_more %}
-        <button id="load-more-btn" onclick="loadMoreActivities()">Load More Activities</button>
-      {% endif %}
+    {% if show_load_more %}
+    <button id="load-more-btn" onclick="loadMoreActivities()">Load More Activities</button>
+    {% endif %}
     {% else %}
-      <p style="text-align: center; margin-top: 2rem;">No activities found.</p>
+    <p style="text-align:center;margin-top:2rem;">No activities found.</p>
     {% endif %}
   </div>
 
@@ -215,78 +196,71 @@
     let map;
     let parkMarkers = [];
     let currentPageGroup = 1;
-
     const parkData = {{ activity_parks | tojson }};
-
-    function jitter(value, amount = 0.0003) {
-      return value + (Math.random() - 0.5) * amount;
-    }
 
     function renderMapMarkers(parkData) {
       parkMarkers.forEach(marker => map.removeLayer(marker));
       parkMarkers = [];
-
       const bounds = [];
-
       parkData.forEach(([name, lat, lon, activities]) => {
-        const jitterLat = jitter(lat);
-        const jitterLon = jitter(lon);
-        bounds.push([jitterLat, jitterLon]);
-
-        const activityList = activities.map(a => `• ${a}`).join("<br>");
-        const marker = L.marker([jitterLat, jitterLon]).addTo(map)
-          .bindPopup(`<strong>${name}</strong><br>${activityList}`);
+        const marker = L.marker([lat, lon]).addTo(map)
+          .bindPopup(`<strong>${name}</strong><br>${activities.map(a => `• ${a}`).join('<br>')}`);
         parkMarkers.push(marker);
+        bounds.push([lat, lon]);
       });
-
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [35, 35] });
-      }
+      if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
     }
 
     function initMap() {
       map = L.map('map');
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
-        subdomains: "abcd",
+        subdomains: 'abcd',
         maxZoom: 19
       }).addTo(map);
-
       renderMapMarkers(parkData);
-
       setTimeout(() => map.invalidateSize(), 200);
     }
 
     async function loadMoreActivities() {
-      const button = document.getElementById("load-more-btn");
+      const button = document.getElementById('load-more-btn');
       button.disabled = true;
-      button.classList.add("loading");
-      button.textContent = "Loading";
+      button.innerText = 'Loading...';
 
       currentPageGroup += 1;
 
-      const res = await fetch("/load_more", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/load_more', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page_group: currentPageGroup })
       });
 
       button.disabled = false;
-      button.classList.remove("loading");
-      button.textContent = "Load More Activities";
+      button.innerText = 'Load More Activities';
 
       if (!res.ok) {
-        console.error("Failed to load more activities");
+        console.error('Failed to load more activities');
         return;
       }
 
       const data = await res.json();
+      const container = document.getElementById('results-container');
 
-      // Append new activities
-      const container = document.getElementById("results-container");
       data.activities.forEach(activity => {
-        const card = document.createElement("div");
-        card.className = "activity-card";
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+
+        let scheduleRows = '';
+        const count = activity.date_ranges.length;
+        for (let i = 0; i < count; i++) {
+          scheduleRows += `<tr>
+            <td>${activity.date_ranges[i]}${activity.days[i] && activity.days[i].length > 0 ? ` (${activity.days[i].map(d => d.slice(0,2)).join('/')})` : ''}</td>
+            <td>${activity.time_ranges[i]}</td>
+            <td>${activity.action_links[i] ? `<a href="${activity.action_links[i]}" target="_blank">Register</a>` : '-'}</td>
+            <td>${activity.detail_links[i] ? `<a href="${activity.detail_links[i]}" target="_blank">More Info</a>` : '-'}</td>
+          </tr>`;
+        }
+
         card.innerHTML = `
           <div class="card-header">
             <h2>${activity.name}</h2>
@@ -294,20 +268,23 @@
           </div>
           <p class="category"><strong>Category:</strong> ${activity.category}</p>
           <p class="age"><strong>Age:</strong> ${activity.age_description}</p>
+          <div class="schedule">
+            <table><thead><tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr></thead><tbody>${scheduleRows}</tbody></table>
+          </div>
           <p class="desc">${activity.desc || ''}</p>
         `;
+
         container.appendChild(card);
       });
 
-      // Update map
       renderMapMarkers(data.activity_parks);
 
       if (!data.more_results_to_fetch) {
-        button.style.display = "none";
+        button.style.display = 'none';
       }
     }
 
-    document.addEventListener("DOMContentLoaded", initMap);
+    document.addEventListener('DOMContentLoaded', initMap);
   </script>
 </body>
 </html>

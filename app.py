@@ -3,6 +3,7 @@ from scrape import ActivityScraper
 from activity_parks import get_activity_parks
 import sqlite3
 from flask_session import Session
+from werkzeug.datastructures import MultiDict  # 🆕 add this import
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Use a secure key in production
@@ -92,6 +93,8 @@ def load_more():
     search_form = session.get("search_form", {})
     if not search_form:
         return jsonify({"error": "Missing search parameters"}), 400
+
+    search_form = MultiDict(search_form)  # 🛠 fix here: wrap back to MultiDict!
 
     activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
     activity_parks = get_activity_parks(activities)
