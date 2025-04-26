@@ -14,7 +14,8 @@ DB_PATH = "chicago_activities.db"
 RESULTS_PATH = "results.html"
 INDEX_PATH = "index.html"
 
-def use_scraper(form_data):
+# Utility function: scrape activities
+def use_scraper(form_data, first_page=1):
     scraper = ActivityScraper(
         distance_miles=form_data.get("distance", type=float),
         parks=form_data.getlist("parks"),
@@ -24,11 +25,86 @@ def use_scraper(form_data):
         location=(
             form_data.get("user_lat", type=float),
             form_data.get("user_lon", type=float),
-        )
+        ),
+        first_page=first_page
     )
     scraper.get_activities()
-    return scraper.activities
+    return scraper.activities, scraper.more_results_to_fetch
 
+# 📄 "/" Route: Show the blank search form
+@app.route("/", methods=["GET"])
+def index():
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+
+        cur.execute("SELECT name, latitude, longitude FROM parks")
+        parks = [
+            {"name": name, "latitude": latitude, "longitude": longitude}
+            for name, latitude, longitude in cur.fetchall()
+        ]
+
+        cur.execute("""
+            SELECT DISTINCT activity 
+            FROM activities 
+            WHERE type = 'ActivityOtherCategoryID' 
+            ORDER BY activity
+        """)
+        all_categories = [row[0] for row in cur.fetchall()]
+
+        cur.execute("""
+            SELECT DISTINCT activity 
+            FROM activities 
+            WHERE type = 'ActivityCategoryID' 
+            ORDER BY activity
+        """)
+        all_age_groups = [row[0] for row in cur.fetchall()]
+
+    return render_template(INDEX_PATH,
+                           parks=parks,
+                           all_categories=all_categories,
+                           all_age_groups=all_age_groups,
+                           open_spots=1)
+
+# "/search" Route: Scrape activities based on user search
+@app.route("/search", methods=["POST"])
+def search():
+    activities, more_results_to_fetch = use_scraper(request.form)
+    session["activities"] = activities
+    session["more_results_to_fetch"] = more_results_to_fetch
+    session["search_form"] = request.form.to_dict(flat=False)
+    return redirect(url_for("results"))
+
+# "/results" Route: Show activities and map
+@app.route("/results")
+def results():
+    activities = session.get("activities", [])
+    activity_parks = get_activity_parks(activities)
+    show_load_more = session.get("more_results_to_fetch", False)
+    return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks, show_load_more=show_load_more)
+
+# "/load_more" Route: Load next batch of activities
+@app.route("/load_more", methods=["POST"])
+def load_more():
+    data = request.get_json()
+    page_group = data.get("page_group", 1)
+    first_page = 6 + (page_group - 1) * 5  # 6, 11, 16, etc.
+
+    search_form = session.get("search_form", {})
+    if not search_form:
+        return jsonify({"error": "Missing search parameters"}), 400
+
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
+    activity_parks = get_activity_parks(activities)
+
+    session["more_results_to_fetch"] = more_results_to_fetch
+
+    return jsonify({
+        "activities": activities,
+        "activity_parks": activity_parks,
+        "more_results_to_fetch": more_results_to_fetch
+    })
+
+# "/find_nearby_parks" Route: Help users find nearby parks
 @app.route("/find_nearby_parks", methods=["POST"])
 def find_nearby_parks():
     data = request.get_json()
@@ -54,51 +130,6 @@ def find_nearby_parks():
         {"name": name, "latitude": latitude, "longitude": longitude}
         for name, latitude, longitude in results
     ])
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        activities = use_scraper(request.form)
-        session["activities"] = activities
-        return redirect(url_for("results"))
-
-    else:
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-
-            cur.execute("SELECT name, latitude, longitude FROM parks")
-            parks = [
-                {"name": name, "latitude": latitude, "longitude": longitude}
-                for name, latitude, longitude in cur.fetchall()
-            ]
-
-            cur.execute("""
-                SELECT DISTINCT activity 
-                FROM activities 
-                WHERE type = 'ActivityOtherCategoryID' 
-                ORDER BY activity
-            """)
-            all_categories = [row[0] for row in cur.fetchall()]
-
-            cur.execute("""
-                SELECT DISTINCT activity 
-                FROM activities 
-                WHERE type = 'ActivityCategoryID' 
-                ORDER BY activity
-            """)
-            all_age_groups = [row[0] for row in cur.fetchall()]
-
-        return render_template(INDEX_PATH,
-                               parks=parks,
-                               all_categories=all_categories,
-                               all_age_groups=all_age_groups,
-                               open_spots=1)
-
-@app.route("/results")
-def results():
-    activities = session.get("activities", [])
-    activity_parks = get_activity_parks(activities)
-    return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks)
 
 if __name__ == "__main__":
     app.run(debug=True)

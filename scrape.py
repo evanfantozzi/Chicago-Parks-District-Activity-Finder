@@ -37,6 +37,9 @@ class ActivityScraper:
         self.all_age_groups = False 
         self.all_parks = False
         
+        # Binary tracker to check if pagination rqequired
+        self.more_results_to_fetch = False
+        
         # Allow for "all" options
         if categories:
             self.categories = self.get_activity_ids_by_name(categories)
@@ -292,6 +295,9 @@ class ActivityScraper:
 
             if len(items) < records_per_page:
                 break
+            elif page_num == self.first_page + max_pages and len(items) == 20:
+                # Can paginate
+                self.more_results_to_fetch = True
             else:
                 time.sleep(1)
 
