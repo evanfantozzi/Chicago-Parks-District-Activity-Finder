@@ -47,61 +47,66 @@ def nearby_parks():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("SELECT name, latitude, longitude FROM parks")
-    parks = [
-    {"name": name, "latitude": latitude, "longitude": longitude}
-    for name, latitude, longitude in cur.fetchall()
-]
-    open_spots = 1 # placeholder
-
-    cur.execute("""
-        SELECT DISTINCT activity 
-        FROM activities 
-        WHERE type = 'ActivityOtherCategoryID' 
-        ORDER BY activity
-    """)
-    activity_names = [row[0] for row in cur.fetchall()]
-
-    cur.execute("""
-        SELECT DISTINCT activity 
-        FROM activities 
-        WHERE type = 'ActivityCategoryID' 
-        ORDER BY activity
-    """)
-    age_groups = [row[0] for row in cur.fetchall()]
-    conn.close()
-
     if request.method == "POST":
+        # POST: Handle form submission
         distance_str = request.form.get("distance")
         distance = float(distance_str) if distance_str else None
-        parks = request.form.getlist("parks")
-        categories = request.form.getlist("categories")
-        age_groups_input = request.form.getlist("age_groups")
+        selected_parks = request.form.getlist("parks")
+        selected_categories = request.form.getlist("categories")
+        selected_age_groups = request.form.getlist("age_groups")
         open_spots = request.form.get("open_spots", 1)
         lat = request.form.get("user_lat", type=float)
         lon = request.form.get("user_lon", type=float)
         
         scraper = ActivityScraper(
             distance_miles=distance,
-            parks=parks,
-            categories=categories,
-            age_groups=age_groups_input,
+            parks=selected_parks,
+            categories=selected_categories,
+            age_groups=selected_age_groups,
             open_spots=open_spots,
-            location = (lat, lon)
+            location=(lat, lon)
         )
         scraper.get_activities()
 
         session["activities"] = scraper.activities
         return redirect(url_for("results"))
 
-    return render_template(INDEX_PATH,
-                       parks=parks,
-                       activity_names=activity_names,
-                       age_groups=age_groups,
-                       open_spots=open_spots)
+    else:
+        # GET: Load form with park/category/age group options
+
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+
+        cur.execute("SELECT name, latitude, longitude FROM parks")
+        parks = [
+            {"name": name, "latitude": latitude, "longitude": longitude}
+            for name, latitude, longitude in cur.fetchall()
+        ]
+
+        cur.execute("""
+            SELECT DISTINCT activity 
+            FROM activities 
+            WHERE type = 'ActivityOtherCategoryID' 
+            ORDER BY activity
+        """)
+        all_categories = [row[0] for row in cur.fetchall()]
+
+        cur.execute("""
+            SELECT DISTINCT activity 
+            FROM activities 
+            WHERE type = 'ActivityCategoryID' 
+            ORDER BY activity
+        """)
+        all_age_groups = [row[0] for row in cur.fetchall()]
+
+        conn.close()
+
+        return render_template(INDEX_PATH,
+                               parks=parks,
+                               all_categories=all_categories,
+                               all_age_groups=all_age_groups,
+                               open_spots=1)
+
 
 
 @app.route("/results")

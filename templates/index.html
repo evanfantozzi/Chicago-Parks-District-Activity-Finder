@@ -815,11 +815,11 @@ function populateParkDropdown(userLatLng) {
           <legend>2. Select Your Preferred Type(s) of Activities</legend>
           <label><input type="checkbox" name="any_categories" id="any_categories" checked> Any</label>
           <div class="dropdown-checkbox">
-            <div class="dropdown-toggle">Select Activities <span class="example">(e.g. {{ activity_names[0].split(' - ')[-1] }})</span></div>
+            <div class="dropdown-toggle">Select Activities <span class="example">(e.g. {{ all_categories[0].split(' - ')[-1] }})</span></div>
             <div class="dropdown-content">
               <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
               {% set ns = namespace(current_group='') %}
-              {% for name in activity_names %}
+              {% for name in all_categories %} 
                 {% set group = name.split(' - ')[0] %}
                 {% if group != ns.current_group %}
                   <div class="dropdown-group">
@@ -843,10 +843,10 @@ function populateParkDropdown(userLatLng) {
           <legend>3. Select Your Preferred Age Group(s)</legend>
           <label><input type="checkbox" name="any_age_groups" id="any_age_groups" checked> Any</label>
           <div class="dropdown-checkbox">
-            <div class="dropdown-toggle">Select Age Group(s) <span class="example">(e.g. {{ age_groups[0] }})</span></div>
+            <div class="dropdown-toggle">Select Age Group(s) <span class="example">(e.g. {{ all_age_groups[0] }})</span></div>
             <div class="dropdown-content">
               <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
-              {% for name in age_groups %}
+              {% for name in all_age_groups %}
                 <label><input type="checkbox" name="age_groups" value="{{ name }}"> {{ name }}</label>
               {% endfor %}
             </div>
