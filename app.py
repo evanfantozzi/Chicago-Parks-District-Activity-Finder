@@ -83,15 +83,19 @@ def index():
 # "/search" Route: Scrape activities based on user search
 @app.route("/search", methods=["POST"])
 def search():
-    activities, more_results_to_fetch = use_scraper(request.form)
-    session["activities"] = activities
-    session["more_results_to_fetch"] = more_results_to_fetch
-    session["search_form"] = request.form.to_dict(flat=False)
+    # turn incoming form into a dict-of-lists so use_scraper always sees lists
+    form_data = request.form.to_dict(flat=False)
 
-    # Set the initial first_page as 1 when starting a new search
-    session["first_page"] = 1
+    activities, more_results_to_fetch = use_scraper(form_data)
+
+    # stash everything in session
+    session["search_form"]           = form_data
+    session["activities"]            = activities
+    session["more_results_to_fetch"] = more_results_to_fetch
+    session["first_page"]            = 1
 
     return redirect(url_for("results"))
+
 
 # "/results" Route: Show activities and map
 @app.route("/results")
