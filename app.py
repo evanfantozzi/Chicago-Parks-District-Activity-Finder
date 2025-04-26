@@ -111,6 +111,7 @@ def load_more():
     # Get the current first_page from session (or default to 1)
     new_first_page = session.get("first_page", 1) + 5
     session["first_page"] = new_first_page
+    print(f"Loading page: {new_first_page}")  # Print current page
 
     # Use search_form directly from session
     search_form = session.get("search_form", {})
@@ -119,6 +120,10 @@ def load_more():
 
     # Fetch activities for the current first_page
     activities, more_results_to_fetch = use_scraper(search_form, first_page=new_first_page)
+    print(f"Fetched {len(activities)} activities")  # Print the number of activities fetched
+    print(f"More results to fetch: {more_results_to_fetch}")  # Print if there are more results to fetch
+
+    
     activity_parks = get_activity_parks(activities)
 
     # Append the new activities to the existing list in the session
