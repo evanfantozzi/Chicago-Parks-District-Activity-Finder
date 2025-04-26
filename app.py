@@ -4,6 +4,11 @@ from activity_parks import get_activity_parks
 import sqlite3
 from flask_session import Session
 
+import logging
+
+# Set up logging to print to console
+logging.basicConfig(level=logging.DEBUG)
+
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Use a secure key in production
 app.config["SESSION_TYPE"] = "filesystem"
@@ -108,23 +113,36 @@ def results():
 # "/load_more" Route: Load next batch of activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
+    logging.debug(f"Session data: {session}")  # Check session values here
+
     # Get the current first_page from session (or default to 1)
     new_first_page = session.get("first_page", 1) + 5
     session["first_page"] = new_first_page
-    print(f"Loading page: {new_first_page}")  # Print current page
+    logging.debug(f"Loading page: {new_first_page}")  # Print current page
 
     # Use search_form directly from session
     search_form = session.get("search_form", {})
     if not search_form:
+        logging.error("Search parameters are missing!")
         return jsonify({"error": "Missing search parameters"}), 400
+    logging.debug(f"Search Form: {search_form}")  # Print the search form
 
     # Fetch activities for the current first_page
     activities, more_results_to_fetch = use_scraper(search_form, first_page=new_first_page)
-    print(f"Fetched {len(activities)} activities")  # Print the number of activities fetched
-    print(f"More results to fetch: {more_results_to_fetch}")  # Print if there are more results to fetch
-
     
+    logging.debug(f"Fetched {len(activities)} activities.")  # Print the number of activities fetched
+    
+    # Log the details of each fetched activity
+    for i, activity in enumerate(activities):
+        logging.debug(f"Activity {i + 1}: {activity.name} at {activity.location}")
+        logging.debug(f"  Category: {activity.category}")
+        logging.debug(f"  Age Description: {activity.age_description}")
+        logging.debug(f"  Date Ranges: {activity.date_ranges}")
+        logging.debug(f"  Time Ranges: {activity.time_ranges}")
+        logging.debug(f"  Description: {activity.desc}")
+
     activity_parks = get_activity_parks(activities)
+    logging.debug(f"Fetched activity parks: {activity_parks}")
 
     # Append the new activities to the existing list in the session
     session["activities"].extend(activities)
@@ -132,7 +150,8 @@ def load_more():
     # Update session with the "more results" status
     session["more_results_to_fetch"] = more_results_to_fetch
 
-    # Return the updated data to the client
+    logging.debug(f"More results to fetch: {more_results_to_fetch}")  # Print the status of more results
+
     return jsonify({
         "activities": activities,
         "activity_parks": activity_parks,
