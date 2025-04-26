@@ -16,20 +16,35 @@ INDEX_PATH = "index.html"
 
 # Utility function: scrape activities
 def use_scraper(form_data, first_page=1):
+    distance_list = form_data.get("distance", [None])
+    distance_miles = float(distance_list[0]) if distance_list[0] else None
+
+    parks = form_data.get("parks", [])
+    categories = form_data.get("categories", [])
+    age_groups = form_data.get("age_groups", [])
+
+    open_spots_list = form_data.get("open_spots", [1])
+    open_spots = int(open_spots_list[0]) if open_spots_list[0] else 1
+
+    user_lat_list = form_data.get("user_lat", [None])
+    user_lon_list = form_data.get("user_lon", [None])
+    location = (
+        float(user_lat_list[0]) if user_lat_list[0] else None,
+        float(user_lon_list[0]) if user_lon_list[0] else None,
+    )
+
     scraper = ActivityScraper(
-        distance_miles=form_data.get("distance", type=float),
-        parks=form_data.getlist("parks"),
-        categories=form_data.getlist("categories"),
-        age_groups=form_data.getlist("age_groups"),
-        open_spots=form_data.get("open_spots", type=int) or 1,
-        location=(
-            form_data.get("user_lat", type=float),
-            form_data.get("user_lon", type=float),
-        ),
+        distance_miles=distance_miles,
+        parks=parks,
+        categories=categories,
+        age_groups=age_groups,
+        open_spots=open_spots,
+        location=location,
         first_page=first_page
     )
     scraper.get_activities()
     return scraper.activities, scraper.more_results_to_fetch
+
 
 # "/" Route: Show the blank search form
 @app.route("/", methods=["GET"])
