@@ -353,20 +353,20 @@
   </style>
 
 <script>
-    window.userLocationMarker = null;
-    window.mapMarkers = [];
-    window.allParks = {{ parks|tojson }};
-  
-    function initializeMap() {
-      window.map = L.map("map").setView([41.8781, -87.6298], 11.5);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> & contributors, &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: "abcd",
-        maxZoom: 19,
-      }).addTo(window.map);
-    }
-  
-    function filterDropdown(input) {
+window.userLocationMarker = null;
+window.mapMarkers = [];
+window.allParks = {{ parks|tojson }};
+
+function initializeMap() {
+  window.map = L.map("map").setView([41.8781, -87.6298], 11.5);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
+    subdomains: "abcd",
+    maxZoom: 19
+  }).addTo(window.map);
+}
+
+function filterDropdown(input) {
   const filter = input.value.toLowerCase();
   const dropdown = input.closest(".dropdown-content");
   let currentGroup = null;
@@ -379,7 +379,7 @@
       }
       currentGroup = el;
       groupHasMatch = false;
-      el.style.display = "none"; // hide initially, only show if needed
+      el.style.display = "none";
     } else {
       const match = el.textContent.toLowerCase().includes(filter);
       el.style.display = match ? "block" : "none";
@@ -390,383 +390,294 @@
     }
   });
 
-  // hide final group if it had no matches
   if (currentGroup && !groupHasMatch) {
     currentGroup.style.display = "none";
   }
 }
-  
-    function updateSummary() {
-      const summaryLines = [];
-  
-      const anyCat = document.getElementById("any_categories");
-      const anyAge = document.getElementById("any_age_groups");
-  
-      if (anyCat.checked) {
-        summaryLines.push("<li><strong>Activities:</strong> Any</li>");
-      } else {
-        const selectedCats = [...document.querySelectorAll('input[name="categories"]:checked')]
-          .map(el => el.parentElement.textContent.trim());
-        if (selectedCats.length) summaryLines.push(`<li><strong>Activities:</strong> ${selectedCats.join(", ")}</li>`);
+
+function updateSummary() {
+  const summaryLines = [];
+  const anyCat = document.getElementById("any_categories");
+  const anyAge = document.getElementById("any_age_groups");
+
+  if (anyCat.checked) {
+    summaryLines.push("<li><strong>Activities:</strong> Any</li>");
+  } else {
+    const selectedCats = [...document.querySelectorAll('input[name="categories"]:checked')]
+      .map(el => el.parentElement.textContent.trim());
+    if (selectedCats.length) {
+      summaryLines.push(`<li><strong>Activities:</strong> ${selectedCats.join(", ")}</li>`);
+    }
+  }
+
+  if (anyAge.checked) {
+    summaryLines.push("<li><strong>Age Groups:</strong> Any</li>");
+  } else {
+    const selectedAges = [...document.querySelectorAll('input[name="age_groups"]:checked')]
+      .map(el => el.parentElement.textContent.trim());
+    if (selectedAges.length) {
+      summaryLines.push(`<li><strong>Age Groups:</strong> ${selectedAges.join(", ")}</li>`);
+    }
+  }
+
+  summaryLines.push("<li><strong>Parks/Facilities:</strong></li>");
+  document.getElementById("form-summary").innerHTML =
+    summaryLines.length
+      ? `<ul style="margin: 0 0 1rem 0; padding-left: 1rem;">${summaryLines.join("")}</ul>`
+      : "No filters selected.";
+}
+
+function enforceAnyCheckboxRules() {
+  const enforce = (anyId, groupName) => {
+    const anyCheckbox = document.getElementById(anyId);
+    const groupCheckboxes = document.querySelectorAll(`input[name="${groupName}"]`);
+
+    anyCheckbox.addEventListener("change", () => {
+      if (anyCheckbox.checked) {
+        groupCheckboxes.forEach(cb => cb.checked = false);
+        updateSummary();
       }
-  
-      if (anyAge.checked) {
-        summaryLines.push("<li><strong>Age Groups:</strong> Any</li>");
-      } else {
-        const selectedAges = [...document.querySelectorAll('input[name="age_groups"]:checked')]
-          .map(el => el.parentElement.textContent.trim());
-        if (selectedAges.length) summaryLines.push(`<li><strong>Age Groups:</strong> ${selectedAges.join(", ")}</li>`);
-      }
-      summaryLines.push(`<li><strong>Parks/Facilities:</strong></li>`);
-  
-      document.getElementById("form-summary").innerHTML =
-        summaryLines.length ? `<ul style="margin: 0 0 1rem 0; padding-left: 1rem;">${summaryLines.join("")}</ul>` : "No filters selected.";
-    }
-  
-    function enforceAnyCheckboxRules() {
-      const enforce = (anyId, groupName) => {
-        const anyCheckbox = document.getElementById(anyId);
-        const groupCheckboxes = document.querySelectorAll(`input[name="${groupName}"]`);
-  
-        anyCheckbox.addEventListener("change", () => {
-          if (anyCheckbox.checked) {
-            groupCheckboxes.forEach(cb => (cb.checked = false));
-            updateSummary();
-          }
-        });
-  
-        groupCheckboxes.forEach(cb => {
-          cb.addEventListener("change", () => {
-            if (cb.checked) {
-              anyCheckbox.checked = false;
-              updateSummary();
-            }
-          });
-        });
-      };
-  
-      enforce("any_categories", "categories");
-      enforce("any_age_groups", "age_groups");
-    }
-  
-    function updateNearbyButtonLabel() {
-      const input = document.getElementById("distance");
-      const button = document.getElementById("nearby-btn");
-      const val = input.value.trim();
-      button.textContent = val ? `Look For Locations Within ${val} Miles` : "Get Locations";
-    }
-  
-    function loadNearbyParks() {
-  const radiusInput = document.querySelector('input[name="distance"]');
-  const radius = parseFloat(radiusInput?.value || "2");
+    });
+
+    groupCheckboxes.forEach(cb => {
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          anyCheckbox.checked = false;
+          updateSummary();
+        }
+      });
+    });
+  };
+
+  enforce("any_categories", "categories");
+  enforce("any_age_groups", "age_groups");
+}
+
+function updateNearbyButtonLabel() {
+  const input = document.getElementById("distance");
+  const button = document.getElementById("nearby-btn");
+  const val = input.value.trim();
+  button.textContent = val
+    ? `Look For Locations Within ${val} Miles`
+    : "Get Locations";
+}
+
+function loadNearbyParks() {
+  const radius = parseFloat(document.querySelector('input[name="distance"]').value || "2");
 
   if (!navigator.geolocation) {
-    populateParkDropdown(null);  // fallback to alphabetical if geolocation not supported
+    populateParkDropdown(null);
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const userLatLng = [pos.coords.latitude, pos.coords.longitude];
-
-      fetch("/find_nearby_parks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          radius: radius,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          populateParkDropdown(userLatLng); // sort by distance
-          const parkNames = data.map(p => p.name.trim().toLowerCase());
-          document.querySelectorAll('input[name="parks"]').forEach(cb => {
-            cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
-          });
-
-          updateSummary();
-          renderMapMarkers(data, userLatLng);
-          renderParkList(data);
-        });
-    },
-    (err) => {
-      console.warn("Geolocation error", err);
-      populateParkDropdown(null);  // fallback to alphabetical if geolocation fails
-    }
-  );
-}
-
-  
-    function renderMapMarkers(data, userLatLng = null, centerView = true) {
-      if (!window.map) return;
-  
-      window.mapMarkers.forEach(marker => marker.remove());
-      window.mapMarkers = [];
-  
-      data.sort((a, b) => a.name.localeCompare(b.name)).forEach((p) => {
-        const marker = L.marker([p.latitude, p.longitude]).addTo(window.map);
-        marker.bindPopup(p.name);
-        window.mapMarkers.push(marker);
+  navigator.geolocation.getCurrentPosition(pos => {
+    const userLatLng = [pos.coords.latitude, pos.coords.longitude];
+    fetch("/find_nearby_parks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, radius })
+    })
+    .then(res => res.json())
+    .then(data => {
+      populateParkDropdown(userLatLng);
+      const parkNames = data.map(p => p.name.trim().toLowerCase());
+      document.querySelectorAll('input[name="parks"]').forEach(cb => {
+        cb.checked = parkNames.includes(cb.value.trim().toLowerCase());
       });
-  
-      if (window.userLocationMarker) {
-        window.map.removeLayer(window.userLocationMarker);
-        window.userLocationMarker = null;
-      }
-  
-      if (userLatLng) {
-        window.userLocationMarker = L.marker(userLatLng, {
-          icon: L.icon({
-            iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
-            iconSize: [27, 43],
-            iconAnchor: [13, 41],
-            popupAnchor: [0, -36],
-          }),
-        }).addTo(window.map).bindPopup("You are here").openPopup();
-      }
-  
-      if (centerView && data.length > 0) {
-        const allPoints = data.map(p => [p.latitude, p.longitude]);
-        if (userLatLng) allPoints.push(userLatLng);
-        window.map.fitBounds(L.latLngBounds(allPoints), { padding: [35, 35] });
-      }
-    }
-  
-    function renderParkList(data, userLatLng = null) {
-    const parkList = document.getElementById("park-list");
-    parkList.innerHTML = "";
-
-    if (userLatLng) {
-        // Sort data by distance to user
-        data.sort((a, b) => {
-        const distA = Math.sqrt(
-            Math.pow(a.latitude - userLatLng[0], 2) +
-            Math.pow(a.longitude - userLatLng[1], 2)
-        );
-        const distB = Math.sqrt(
-            Math.pow(b.latitude - userLatLng[0], 2) +
-            Math.pow(b.longitude - userLatLng[1], 2)
-        );
-        return distA - distB;
-        });
-    } else {
-        // fallback: sort alphabetically
-        data.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    data.forEach((p, index) => {
-        const li = document.createElement("li");
-        li.textContent = p.name;
-        li.style.cursor = "pointer";
-        li.style.marginBottom = "0.4em";
-
-        li.addEventListener("click", () => {
-        window.mapMarkers[index].openPopup();
-        window.map.setView([p.latitude, p.longitude], 14);
-        });
-
-        parkList.appendChild(li);
+      updateSummary();
+      renderMapMarkers(data, userLatLng);
+      renderParkList(data);
     });
-
-  document.getElementById("clear-parks-btn").style.display = data.length > 0 ? "block" : "none";
+  }, err => {
+    console.warn("Geolocation error", err);
+    populateParkDropdown(null);
+  });
 }
 
-function haversineDistance(coord1, coord2) {
-  const R = 3958.8; // Radius of the Earth in miles
-  const toRad = (x) => (x * Math.PI) / 180;
+function renderMapMarkers(data, userLatLng = null, centerView = true) {
+  if (!window.map) return;
+  window.mapMarkers.forEach(m => m.remove());
+  window.mapMarkers = [];
+  data.forEach(p => {
+    const marker = L.marker([p.latitude, p.longitude]).addTo(map).bindPopup(p.name);
+    window.mapMarkers.push(marker);
+  });
+  if (window.userLocationMarker) {
+    map.removeLayer(window.userLocationMarker);
+    window.userLocationMarker = null;
+  }
+  if (userLatLng) {
+    window.userLocationMarker = L.marker(userLatLng, {
+      icon: L.icon({
+        iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
+        iconSize: [27, 43],
+        iconAnchor: [13, 41],
+        popupAnchor: [0, -36]
+      })
+    }).addTo(map).bindPopup("You are here").openPopup();
+  }
+  if (centerView && window.mapMarkers.length) {
+    const bounds = window.mapMarkers.map(m => m.getLatLng());
+    map.fitBounds(bounds, { padding: [35, 35] });
+  }
+}
 
-  const dLat = toRad(coord2[0] - coord1[0]);
-  const dLon = toRad(coord2[1] - coord1[1]);
-  const lat1 = toRad(coord1[0]);
-  const lat2 = toRad(coord2[0]);
+function renderParkList(data, userLatLng = null) {
+  const parkList = document.getElementById("park-list");
+  parkList.innerHTML = "";
+  data.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.textContent = p.name;
+    li.style.cursor = "pointer";
+    li.addEventListener("click", () => {
+      window.mapMarkers[i].openPopup();
+      map.setView([p.latitude, p.longitude], 14);
+    });
+    parkList.appendChild(li);
+  });
+  document.getElementById("clear-parks-btn").style.display =
+    data.length ? "block" : "none";
+}
 
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
+function haversineDistance([lat1, lon1], [lat2, lon2]) {
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2
+          + Math.sin(dLon / 2) ** 2 * Math.cos(toRad(lat1)) * Math.cos(toRad(lat2));
+  return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function populateParkDropdown(userLatLng) {
   const dropdown = document.getElementById("parks-dropdown");
-
-  // Remove all existing park labels
   dropdown.querySelectorAll("label").forEach(el => el.remove());
-
-  const parks = [...window.allParks]; // use full objects
-
-  // Sort by distance if user location is known
+  const parks = [...window.allParks];
   if (userLatLng) {
-    parks.sort((a, b) => {
-      const distA = haversineDistance(userLatLng, [a.latitude, a.longitude]);
-      const distB = haversineDistance(userLatLng, [b.latitude, b.longitude]);
-      return distA - distB;
-    });
+    parks.sort((a, b) => haversineDistance(userLatLng, [a.latitude, a.longitude])
+                      - haversineDistance(userLatLng, [b.latitude, b.longitude]));
   } else {
     parks.sort((a, b) => a.name.localeCompare(b.name));
   }
-
   parks.forEach(p => {
     const label = document.createElement("label");
-    const checkbox = document.createElement("input");
-
-    checkbox.type = "checkbox";
-    checkbox.name = "parks";
-    checkbox.value = p.name;
-
-    // 🆕 Add event listener to update map when user manually checks/unchecks
-    checkbox.addEventListener("change", updateMapFromManualSelection);
-
-    const distText = userLatLng
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.name = "parks";
+    cb.value = p.name;
+    cb.addEventListener("change", updateMapFromManualSelection);
+    const dist = userLatLng
       ? ` (${haversineDistance(userLatLng, [p.latitude, p.longitude]).toFixed(1)} mi)`
       : "";
-
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(` ${p.name}${distText}`));
-
+    label.append(cb, document.createTextNode(` ${p.name}${dist}`));
     dropdown.insertBefore(label, dropdown.querySelector("#park-list"));
   });
 }
 
+function clearParkSelection() {
+  document.querySelectorAll('input[name="parks"]').forEach(cb => cb.checked = false);
+  window.mapMarkers.forEach(m => m.remove());
+  window.mapMarkers = [];
+  if (window.userLocationMarker) {
+    map.removeLayer(window.userLocationMarker);
+    window.userLocationMarker = null;
+  }
+  map.setView([41.8781, -87.6298], 11.5);
+  document.getElementById("clear-parks-btn").style.display = "none";
+  updateSummary();
+}
 
-  
-    function clearParkSelection() {
-      window.isClearingParks = true;
-  
-      document.querySelectorAll('input[name="parks"]').forEach(cb => (cb.checked = false));
-      document.getElementById("park-list").innerHTML = "";
-  
-      window.mapMarkers.forEach(marker => marker.remove());
-      window.mapMarkers = [];
-  
-      if (window.userLocationMarker) {
-        window.map.removeLayer(window.userLocationMarker);
-        window.userLocationMarker = null;
-      }
-  
-      window.map.setView([41.8781, -87.6298], 11.5);
-      document.getElementById("clear-parks-btn").style.display = "none";
-      updateSummary();
-      window.isClearingParks = false;
-    }
-  
-    function updateMapFromManualSelection() {
-      if (window.isClearingParks) return;
-  
-      const selectedParkNames = Array.from(document.querySelectorAll('input[name="parks"]:checked'))
-        .map(cb => cb.value.trim().toLowerCase());
-  
-      fetch("/find_nearby_parks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: 41.8781, lon: -87.6298, radius: 100 }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          const matched = selectedParkNames
-            .map(name => data.find(p => p.name.trim().toLowerCase() === name))
-            .filter(Boolean);
-  
-          if (matched.length > 0) {
-            renderMapMarkers(matched, null);
-            renderParkList(matched);
-          }
-  
-          document.getElementById("clear-parks-btn").style.display = matched.length > 0 ? "block" : "none";
-        });
-    }
-  
-    function initializeGroupCheckboxes() {
-      document.querySelectorAll(".group-toggle").forEach(groupToggle => {
-        const group = groupToggle.getAttribute("data-group");
-        const children = document.querySelectorAll(`input[name="categories"][data-group="${group}"]`);
-        const checkedCount = Array.from(children).filter(cb => cb.checked).length;
-  
-        groupToggle.checked = checkedCount === children.length;
-        groupToggle.indeterminate = checkedCount > 0 && checkedCount < children.length;
-      });
-    }
-  
-    function attachGroupToggleHandlers() {
-  // Group checkbox toggles all children
-  document.querySelectorAll(".group-toggle").forEach(groupToggle => {
-    groupToggle.addEventListener("change", (e) => {
-      const group = e.target.getAttribute("data-group");
-      const isChecked = e.target.checked;
+function updateMapFromManualSelection() {
+  const selected = Array.from(document.querySelectorAll('input[name="parks"]:checked'))
+    .map(cb => cb.value.trim().toLowerCase());
+  fetch("/find_nearby_parks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat: 41.8781, lon: -87.6298, radius: 100 })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const matched = selected
+      .map(name => data.find(p => p.name.trim().toLowerCase() === name))
+      .filter(Boolean);
+    renderMapMarkers(matched);
+    renderParkList(matched);
+    document.getElementById("clear-parks-btn").style.display =
+      matched.length ? "block" : "none";
+  });
+}
 
-      document.querySelectorAll(`input[name="categories"][data-group="${group}"]`).forEach(cb => {
-        cb.checked = isChecked;
-        cb.dispatchEvent(new Event("change"));  // triggers updateSummary + group state
-      });
+function initializeGroupCheckboxes() {
+  document.querySelectorAll(".group-toggle").forEach(toggle => {
+    const group = toggle.dataset.group;
+    const boxes = document.querySelectorAll(`input[name="categories"][data-group="${group}"]`);
+    const checked = [...boxes].filter(cb => cb.checked).length;
+    toggle.checked = checked === boxes.length;
+    toggle.indeterminate = checked > 0 && checked < boxes.length;
+  });
+}
+
+function attachGroupToggleHandlers() {
+  document.querySelectorAll(".group-toggle").forEach(toggle => {
+    toggle.addEventListener("change", e => {
+      const group = e.target.dataset.group;
+      document.querySelectorAll(`input[name="categories"][data-group="${group}"]`)
+        .forEach(cb => { cb.checked = e.target.checked; cb.dispatchEvent(new Event("change")); });
     });
   });
-
   document.querySelectorAll('input[name="categories"]').forEach(cb => {
     cb.addEventListener("change", () => {
-      const group = cb.getAttribute("data-group");
-      const groupToggle = document.querySelector(`.group-toggle[data-group="${group}"]`);
-      const all = Array.from(document.querySelectorAll(`input[name="categories"][data-group="${group}"]`));
-      const checked = all.filter(c => c.checked);
-
-      groupToggle.checked = checked.length === all.length;
-      groupToggle.indeterminate = checked.length > 0 && checked.length < all.length;
-
-      updateSummary(); // ensure summary updates on individual toggle
+      const group = cb.dataset.group;
+      const boxes = document.querySelectorAll(`input[name="categories"][data-group="${group}"]`);
+      const checked = [...boxes].filter(x => x.checked).length;
+      const toggle = document.querySelector(`.group-toggle[data-group="${group}"]`);
+      toggle.checked = checked === boxes.length;
+      toggle.indeterminate = checked > 0 && checked < boxes.length;
+      updateSummary();
     });
   });
 }
 
-  
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll(".dropdown-toggle").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const wrapper = btn.closest(".dropdown-checkbox");
-          wrapper.classList.toggle("open");
-        });
-      });
-  
-      document.addEventListener("click", (e) => {
-        document.querySelectorAll(".dropdown-checkbox.open").forEach((dropdown) => {
-          if (!dropdown.contains(e.target)) dropdown.classList.remove("open");
-        });
-      });
-  
-      document.querySelectorAll("input[name='parks']").forEach((input) => {
-        input.addEventListener("change", updateMapFromManualSelection);
-      });
-  
-      document.getElementById("distance").addEventListener("input", () => {
-        updateSummary();
-        updateNearbyButtonLabel();
-      });
-  
-      document.querySelector("form").addEventListener("submit", (e) => {
-        const hasDistance = document.querySelector('input[name="distance"]').value.trim();
-        const hasParks = document.querySelectorAll('input[name="parks"]:checked').length > 0;
-  
-        if (!hasDistance && !hasParks) {
-          e.preventDefault();
-          document.getElementById("form-summary").innerHTML =
-            `<span style="color: red; font-weight: bold;">Please enter a distance or select at least one park before submitting.</span>`;
-        }
-      });
-  
-      initializeMap();
-      loadNearbyParks();
-      updateSummary();
-      updateNearbyButtonLabel();
-      enforceAnyCheckboxRules();
-      initializeGroupCheckboxes();
-      attachGroupToggleHandlers();
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".dropdown-toggle").forEach(btn => {
+    btn.addEventListener("click", () => btn.closest(".dropdown-checkbox").classList.toggle("open"));
+  });
+  document.addEventListener("click", e => {
+    document.querySelectorAll(".dropdown-checkbox.open").forEach(dd => {
+      if (!dd.contains(e.target)) dd.classList.remove("open");
     });
-    navigator.geolocation.getCurrentPosition(pos => {
+  });
+  document.querySelectorAll("input[name='parks']").forEach(input => {
+    input.addEventListener("change", updateMapFromManualSelection);
+  });
+  document.getElementById("distance").addEventListener("input", () => {
+    updateSummary();
+    updateNearbyButtonLabel();
+  });
+  document.querySelector("form").addEventListener("submit", e => {
+    const hasDistance = document.querySelector('input[name="distance"]').value.trim();
+    const hasParks = document.querySelectorAll('input[name="parks"]:checked').length;
+    if (!hasDistance && !hasParks) {
+      e.preventDefault();
+      document.getElementById("form-summary").innerHTML =
+        `<span style="color: red; font-weight: bold;">Please enter a distance or select at least one park before submitting.</span>`;
+    }
+  });
+
+  initializeMap();
+  loadNearbyParks();
+  updateSummary();
+  updateNearbyButtonLabel();
+  enforceAnyCheckboxRules();
+  initializeGroupCheckboxes();
+  attachGroupToggleHandlers();
+
+  navigator.geolocation.getCurrentPosition(pos => {
     document.getElementById("user-lat").value = pos.coords.latitude;
     document.getElementById("user-lon").value = pos.coords.longitude;
-    });
-  </script>
+  });
+});
+</script>
+
   
   
   
