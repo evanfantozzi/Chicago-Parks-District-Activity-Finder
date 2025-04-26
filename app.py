@@ -31,7 +31,7 @@ def use_scraper(form_data, first_page=1):
     scraper.get_activities()
     return scraper.activities, scraper.more_results_to_fetch
 
-# 📄 "/" Route: Show the blank search form
+# "/" Route: Show the blank search form
 @app.route("/", methods=["GET"])
 def index():
     with sqlite3.connect(DB_PATH) as conn:
