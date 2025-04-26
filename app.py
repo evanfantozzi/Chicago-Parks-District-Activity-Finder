@@ -108,20 +108,26 @@ def results():
 # "/load_more" Route: Load next batch of activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
-    # Increment first_page by 5 for each load more action
-    first_page = session.get("first_page", 1) + 5
-    session["first_page"] = first_page
+    # Get the current first_page from session (or default to 1)
+    new_first_page = session.get("first_page", 1) + 5
+    session["first_page"] = new_first_page
 
     # Use search_form directly from session
     search_form = session.get("search_form", {})
     if not search_form:
         return jsonify({"error": "Missing search parameters"}), 400
 
-    activities, more_results_to_fetch = use_scraper(search_form, first_page=first_page)
+    # Fetch activities for the current first_page
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=new_first_page)
     activity_parks = get_activity_parks(activities)
 
+    # Append the new activities to the existing list in the session
+    session["activities"].extend(activities)
+
+    # Update session with the "more results" status
     session["more_results_to_fetch"] = more_results_to_fetch
 
+    # Return the updated data to the client
     return jsonify({
         "activities": activities,
         "activity_parks": activity_parks,
