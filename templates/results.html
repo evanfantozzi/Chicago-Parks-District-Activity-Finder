@@ -233,7 +233,7 @@
 
             // If the page number doesn't exist, it's the first load, so we set it to 6
             if (isNaN(currentPage)) {
-                currentPage = 6; // Start at page 6 for the first load
+                currentPage = 1; // Start at page 6 for the first load
                 sessionStorage.setItem('currentPage', currentPage);
             } else {
                 // If it's not the first load, increment the page by 5
@@ -318,7 +318,7 @@
 
     // Reset page number when a new search is initiated
     function resetPage() {
-        sessionStorage.setItem('currentPage', 6);  // Reset to page 6
+        sessionStorage.setItem('currentPage', 1);  // Reset to page 6
     }
 
     document.addEventListener('DOMContentLoaded', initMap);
