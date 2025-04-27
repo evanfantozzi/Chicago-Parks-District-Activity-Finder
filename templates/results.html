@@ -5,27 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
       display: flex;
+      flex-direction: column;
       height: 100vh;
       background: #f9fafb;
     }
 
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
     #results {
-      width: 50%;
-      overflow-y: auto;
+      flex: 1;
+      overflow-y: auto; /* Allow vertical scrolling for the list of activities */
       padding: 2rem;
       box-sizing: border-box;
+      background: #ffffff;
+      height: 100vh;
+      overflow-x: hidden; /* Hide horizontal overflow */
     }
 
     #map {
-      width: 50%;
+      flex: 1;
       height: 100vh;
+      background: #f4f4f4;
     }
 
     h1 {
@@ -47,6 +57,8 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.5rem;
+      overflow-y: auto; /* Allow scrolling for long lists */
+      height: auto; /* Allow dynamic height */
     }
 
     .activity-card {
@@ -54,12 +66,29 @@
       padding: 1.25rem;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      overflow: hidden;
+      max-width: 90%; /* Ensure cards are responsive */
+      word-wrap: break-word;
+      margin-bottom: 1rem; /* Add space between cards */
+      margin-left: 10px;
+      height: auto;
+      max-height: 400px; /* Maximum height for cards, prevent cards getting too big */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      margin-bottom: 1rem;
     }
 
     .card-header h2 {
-      margin: 0 0 0.25rem;
+      margin: 0;
       font-size: 1.1rem;
       color: #007acc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .card-header .location {
@@ -71,6 +100,7 @@
     .activity-card p {
       margin: 0.3rem 0;
       font-size: 0.95rem;
+      line-height: 1.4;
     }
 
     .activity-card .desc {
@@ -127,188 +157,221 @@
 </head>
 
 <body>
-  <div id="results">
-    <h1>Matching Activities</h1>
-    <a href="/" class="back-link">← Back to Search</a>
+  <div class="main-container">
+    <div id="results">
+      <h1>Matching Activities</h1>
+      <a href="/" class="back-link" onclick="resetPage();">← Back to Search</a>
 
-    {% if activities %}
-    <div id="results-container">
-      {% for activity in activities %}
-      <div class="activity-card">
-        <div class="card-header">
-          <h2>{{ activity.name }}</h2>
-          <p class="location">{{ activity.location }}</p>
+      {% if activities %}
+      <div id="results-container">
+        {% for activity in activities %}
+        <div class="activity-card" data-activity-id="{{ activity.id }}" data-place-name="{{ activity.location }}">
+          <div class="card-header">
+            <h2>{{ activity.name }}</h2>
+            <p class="location">{{ activity.location }}</p>
+          </div>
+          <p class="category"><strong>Category:</strong> {{ activity.category }}</p>
+          <p class="age"><strong>Age:</strong> {{ activity.age_description }}</p>
+
+          <div class="schedule">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Register</th>
+                  <th>More Info</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for i in range(activity.date_ranges | length) %}
+                <tr>
+                  <td>
+                    {{ activity.date_ranges[i] }}
+                    {% if activity.days[i] and activity.days[i] | length > 0 %}
+                    ({{ activity.days[i] | map('slice', 0, 2) | map('capitalize') | join('/') }})
+                    {% endif %}
+                  </td>
+                  <td>{{ activity.time_ranges[i] }}</td>
+                  <td>
+                    {% if activity.action_links[i] %}
+                    <a href="{{ activity.action_links[i] }}" target="_blank">Register</a>
+                    {% else %}-{% endif %}
+                  </td>
+                  <td>
+                    {% if activity.detail_links[i] %}
+                    <a href="{{ activity.detail_links[i] }}" target="_blank">More Info</a>
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <p class="desc">{{ activity.desc|safe }}</p>
         </div>
-        <p class="category"><strong>Category:</strong> {{ activity.category }}</p>
-        <p class="age"><strong>Age:</strong> {{ activity.age_description }}</p>
-
-        <div class="schedule">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Register</th>
-                <th>More Info</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for i in range(activity.date_ranges | length) %}
-              <tr>
-                <td>
-                  {{ activity.date_ranges[i] }}
-                  {% if activity.days[i] and activity.days[i] | length > 0 %}
-                  ({{ activity.days[i] | map('slice', 0, 2) | map('capitalize') | join('/') }})
-                  {% endif %}
-                </td>
-                <td>{{ activity.time_ranges[i] }}</td>
-                <td>
-                  {% if activity.action_links[i] %}
-                  <a href="{{ activity.action_links[i] }}" target="_blank">Register</a>
-                  {% else %}-{% endif %}
-                </td>
-                <td>
-                  {% if activity.detail_links[i] %}
-                  <a href="{{ activity.detail_links[i] }}" target="_blank">More Info</a>
-                  {% else %}-{% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <p class="desc">{{ activity.desc|safe }}</p>
+        {% endfor %}
       </div>
-      {% endfor %}
+
+      {% if show_load_more %}
+      <button id="load-more-btn" onclick="loadMoreActivities()">Load More Activities</button>
+      {% endif %}
+      {% else %}
+      <p style="text-align:center;margin-top:2rem;">No activities found.</p>
+      {% endif %}
     </div>
 
-    {% if show_load_more %}
-    <button id="load-more-btn" onclick="loadMoreActivities()">Load More Activities</button>
-    {% endif %}
-    {% else %}
-    <p style="text-align:center;margin-top:2rem;">No activities found.</p>
-    {% endif %}
+    <div id="map"></div>
   </div>
-
-  <div id="map"></div>
 
   <script>
     let map;
     let parkMarkers = [];
+    let activityCards = new Map(); // Store activity cards by place name
 
     const parkData = {{ activity_parks | tojson }};
 
     function renderMapMarkers(parkData) {
-        parkMarkers.forEach(marker => map.removeLayer(marker));
-        parkMarkers = [];
+        // Add new markers without removing the old ones
         const bounds = [];
         parkData.forEach(([name, lat, lon, activities]) => {
-            const uniqueActivities = [...new Set(activities)]; // <-- REMOVE DUPLICATES
+            const existingMarker = parkMarkers.find(marker => marker.placeName === name);
+            if (existingMarker) return; // If marker already exists, don't add it again
+
+            // Deduplicate the activities array by converting it to a Set, then back to an array
+            const uniqueActivities = [...new Set(activities)];
+
             const marker = L.marker([lat, lon]).addTo(map)
-            .bindPopup(`<strong>${name}</strong><br>${uniqueActivities.map(a => `• ${a}`).join('<br>')}`);
+            .bindPopup(`<strong>${name}</strong><br>${uniqueActivities.map(a => `• ${a}`).join('<br>')}`)
+            .on('click', () => openActivityCardByPlace(name)); // Event listener to open activity card by place name
+            marker.placeName = name; // Store the place name for easy lookup
             parkMarkers.push(marker);
             bounds.push([lat, lon]);
-        });
-        if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
-        }
+    });
 
+  if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
+}
+
+
+    function openActivityCardByPlace(placeName) {
+      // Find the activity card matching the place name
+      const matchingCard = activityCards.get(placeName);
+      if (matchingCard) {
+        // Open the card's corresponding marker popup without highlighting
+        const matchingMarker = parkMarkers.find(marker => marker.placeName === placeName);
+        if (matchingMarker) {
+          matchingMarker.openPopup(); // Open the marker's popup without zooming in
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('results-container');
+
+      // Handle click events for all activity cards, including dynamically loaded ones
+      container.addEventListener('click', (event) => {
+        const card = event.target.closest('.activity-card');
+        if (!card) return;
+
+        const placeName = card.getAttribute('data-place-name');
+        const matchingMarker = parkMarkers.find(marker => marker.placeName === placeName);
+        if (matchingMarker) {
+          matchingMarker.openPopup(); // Open the marker's popup without zooming in
+        }
+      });
+    });
 
     function initMap() {
-        map = L.map('map');
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
-        renderMapMarkers(parkData);
-        setTimeout(() => map.invalidateSize(), 200);
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-            const userLat = pos.coords.latitude;
-            const userLon = pos.coords.longitude;
-            L.marker([userLat, userLon], {
-                icon: L.icon({
-                iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
-                iconSize: [27, 43],
-                iconAnchor: [13, 41],
-                popupAnchor: [0, -36]
-                })
-            }).addTo(map).bindPopup("You are here");
-            });
-        }
-        }
-
+      map = L.map('map');
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+      renderMapMarkers(parkData);
+      setTimeout(() => map.invalidateSize(), 200);
+    }
 
     async function loadMoreActivities() {
-        const button = document.getElementById('load-more-btn');
-        button.disabled = true;
-        button.innerText = 'Loading...';
+      const button = document.getElementById('load-more-btn');
+      button.disabled = true;
+      button.innerText = 'Loading...';
 
-        const currentPage = window.currentPage || 6; // Default starting page if not defined
+      try {
+        let currentPage = parseInt(sessionStorage.getItem('currentPage')) || 6;
+        sessionStorage.setItem('currentPage', currentPage + 5); // Store the next page number
 
         const res = await fetch('/load_more', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ page: currentPage })
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page: currentPage })
         });
 
         button.disabled = false;
         button.innerText = 'Load More Activities';
 
         if (!res.ok) {
-            console.error('Failed to load more activities');
-            return;
+          console.error(`Failed to load more activities`);
+          return;
         }
 
         const data = await res.json();
-
         const container = document.getElementById('results-container');
+
         data.activities.forEach(activity => {
-            const card = document.createElement('div');
-            card.className = 'activity-card';
+          const card = document.createElement('div');
+          card.className = 'activity-card';
+          card.setAttribute('data-place-name', activity.location); // Set place name for matching
 
-            let scheduleRows = '';
-            const count = activity.date_ranges.length;
-            for (let i = 0; i < count; i++) {
-                scheduleRows += `<tr>
-                    <td>${activity.date_ranges[i]}${activity.days[i] && activity.days[i].length > 0 ? ` (${activity.days[i].map(d => d.slice(0,2)).join('/')})` : ''}</td>
-                    <td>${activity.time_ranges[i]}</td>
-                    <td>${activity.action_links[i] ? `<a href="${activity.action_links[i]}" target="_blank">Register</a>` : '-'}</td>
-                    <td>${activity.detail_links[i] ? `<a href="${activity.detail_links[i]}" target="_blank">More Info</a>` : '-'}</td>
-                </tr>`;
-            }
-
-            card.innerHTML = `
+          // Generate activity details and append to the card
+          card.innerHTML = `
             <div class="card-header">
-                <h2>${activity.name}</h2>
-                <p class="location">${activity.location}</p>
+              <h2>${activity.name}</h2>
+              <p class="location">${activity.location}</p>
             </div>
             <p class="category"><strong>Category:</strong> ${activity.category}</p>
             <p class="age"><strong>Age:</strong> ${activity.age_description}</p>
             <div class="schedule">
-                <table><thead><tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr></thead><tbody>${scheduleRows}</tbody></table>
+              <table>
+                <thead><tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr></thead>
+                <tbody>
+                  ${activity.date_ranges.map((date, i) => `
+                    <tr>
+                      <td>${date}</td>
+                      <td>${activity.time_ranges[i]}</td>
+                      <td>${activity.action_links[i] ? `<a href="${activity.action_links[i]}" target="_blank">Register</a>` : '-'}</td>
+                      <td>${activity.detail_links[i] ? `<a href="${activity.detail_links[i]}" target="_blank">More Info</a>` : '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
             </div>
             <p class="desc">${activity.desc || ''}</p>
-            `;
+          `;
 
-            container.appendChild(card);
+          container.appendChild(card); // Append new card
+
+          // Store the card in the map by place name for matching
+          activityCards.set(activity.location, card);
         });
 
+        // Add new map markers
         renderMapMarkers(data.activity_parks);
 
+        // If no more results to fetch, hide the button
         if (!data.more_results_to_fetch) {
-            button.style.display = 'none';
-        } else {
-            window.currentPage += 5; // Advance to next batch
+          button.style.display = 'none';
         }
+      } catch (error) {
+        console.error('Error while loading more activities:', error);
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        window.currentPage = 6; // Initialize
-        initMap();
-    });
+    // Reset page number when a new search is initiated
+    function resetPage() {
+      sessionStorage.setItem('currentPage', 6);  // Reset to page 6
+    }
 
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
