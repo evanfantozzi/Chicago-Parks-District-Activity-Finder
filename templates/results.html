@@ -128,7 +128,7 @@
 <body>
   <div id="results">
     <h1>Matching Activities</h1>
-    <a href="/" class="back-link" onclick="resetPage();">← Back to Search</a>
+    <a href="/" class="back-link">← Back to Search</a>
 
     {% if activities %}
     <div id="results-container">
@@ -199,76 +199,70 @@
     const parkData = {{ activity_parks | tojson }};
 
     function renderMapMarkers(parkData) {
-      parkMarkers.forEach(marker => map.removeLayer(marker));
-      parkMarkers = [];
-      const bounds = [];
-      parkData.forEach(([name, lat, lon, activities]) => {
-        const marker = L.marker([lat, lon]).addTo(map)
-          .bindPopup(`<strong>${name}</strong><br>${activities.map(a => `• ${a}`).join('<br>')}`);
-        parkMarkers.push(marker);
-        bounds.push([lat, lon]);
-      });
-      if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
-    }
-
-    function initMap() {
-      map = L.map('map');
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(map);
-      renderMapMarkers(parkData);
-      setTimeout(() => map.invalidateSize(), 200);
-    }
-
-    async function loadMoreActivities() {
-    const button = document.getElementById('load-more-btn');
-    button.disabled = true;
-    button.innerText = 'Loading...';
-
-    try {
-        // Get the current page number from sessionStorage (it may be undefined on the first load)
-        let currentPage = parseInt(sessionStorage.getItem('currentPage'));
-
-        // If the page number doesn't exist, it's the first load, so we set it to 1
-        if (isNaN(currentPage)) {
-            currentPage = 1;  // Start at page 1 for the first load
-        } else {
-            // Increment page by 5 as per your scraper's behavior
-            currentPage += 5;
+        parkMarkers.forEach(marker => map.removeLayer(marker));
+        parkMarkers = [];
+        const bounds = [];
+        parkData.forEach(([name, lat, lon, activities]) => {
+            const uniqueActivities = [...new Set(activities)]; // <-- REMOVE DUPLICATES
+            const marker = L.marker([lat, lon]).addTo(map)
+            .bindPopup(`<strong>${name}</strong><br>${uniqueActivities.map(a => `• ${a}`).join('<br>')}`);
+            parkMarkers.push(marker);
+            bounds.push([lat, lon]);
+        });
+        if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
         }
 
-        // Store the updated current page number in sessionStorage
-        sessionStorage.setItem('currentPage', currentPage);
 
-        // Send the current page number in the request body
+    function initMap() {
+        map = L.map('map');
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        renderMapMarkers(parkData);
+        setTimeout(() => map.invalidateSize(), 200);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+            const userLat = pos.coords.latitude;
+            const userLon = pos.coords.longitude;
+            L.marker([userLat, userLon], {
+                icon: L.icon({
+                iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
+                iconSize: [27, 43],
+                iconAnchor: [13, 41],
+                popupAnchor: [0, -36]
+                })
+            }).addTo(map).bindPopup("You are here");
+            });
+        }
+        }
+
+
+    async function loadMoreActivities() {
+        const button = document.getElementById('load-more-btn');
+        button.disabled = true;
+        button.innerText = 'Loading...';
+
+        const currentPage = window.currentPage || 6; // Default starting page if not defined
+
         const res = await fetch('/load_more', {
             method: 'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ page: currentPage })  // Send the current page
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: currentPage })
         });
 
         button.disabled = false;
         button.innerText = 'Load More Activities';
 
         if (!res.ok) {
-            const errorText = await res.text();
-            console.error(`Failed to load more activities. Status: ${res.status}. Response: ${errorText}`);
+            console.error('Failed to load more activities');
             return;
         }
 
         const data = await res.json();
 
-        // Check if there are no new activities to load
-        if (data.activities && data.activities.length === 0) {
-            console.log('No new activities to load.');
-            return;
-        }
-
-        // Append new activities to the container
         const container = document.getElementById('results-container');
         data.activities.forEach(activity => {
             const card = document.createElement('div');
@@ -278,7 +272,7 @@
             const count = activity.date_ranges.length;
             for (let i = 0; i < count; i++) {
                 scheduleRows += `<tr>
-                    <td>${activity.date_ranges[i]}${activity.days[i] && activity.days[i].length > 0 ? ` (${activity.days[i].map(d => d.slice(0, 2)).join('/')})` : ''}</td>
+                    <td>${activity.date_ranges[i]}${activity.days[i] && activity.days[i].length > 0 ? ` (${activity.days[i].map(d => d.slice(0,2)).join('/')})` : ''}</td>
                     <td>${activity.time_ranges[i]}</td>
                     <td>${activity.action_links[i] ? `<a href="${activity.action_links[i]}" target="_blank">Register</a>` : '-'}</td>
                     <td>${activity.detail_links[i] ? `<a href="${activity.detail_links[i]}" target="_blank">More Info</a>` : '-'}</td>
@@ -298,27 +292,22 @@
             <p class="desc">${activity.desc || ''}</p>
             `;
 
-            container.appendChild(card);  // Append new card instead of clearing
+            container.appendChild(card);
         });
 
-        // Update map markers with new activities
         renderMapMarkers(data.activity_parks);
 
-        // If no more results to fetch, hide the button
         if (!data.more_results_to_fetch) {
             button.style.display = 'none';
+        } else {
+            window.currentPage += 5; // Advance to next batch
         }
-
-    } catch (error) {
-        console.error('Error occurred while loading more activities:', error);
     }
-}
 
-
-    // Reset page number when a new search is initiated
-    function resetPage() {
-        sessionStorage.setItem('currentPage', 1);  
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        window.currentPage = 6; // Initialize
+        initMap();
+    });
 
     document.addEventListener('DOMContentLoaded', initMap);
   </script>

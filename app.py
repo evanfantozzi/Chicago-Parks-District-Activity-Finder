@@ -3,10 +3,7 @@ from scrape import ActivityScraper
 from activity_parks import get_activity_parks
 import sqlite3
 from flask_session import Session
-import logging
 
-# Set up basic logging configuration for Flask
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Use a secure key in production
@@ -20,29 +17,21 @@ INDEX_PATH = "index.html"
 
 # Utility function: scrape activities
 def use_scraper(form_data, first_page=1):
-    distance_list = form_data.get("distance", [None])
-    distance_miles = float(distance_list[0]) if distance_list[0] else None
 
-    parks = form_data.get("parks", [])
-    categories = form_data.get("categories", [])
-    age_groups = form_data.get("age_groups", [])
-
-    open_spots_list = form_data.get("open_spots", [1])
-    open_spots = int(open_spots_list[0]) if open_spots_list[0] else 1
-
+    # Build location tuple using fetched address
     user_lat_list = form_data.get("user_lat", [None])
     user_lon_list = form_data.get("user_lon", [None])
     location = (
         float(user_lat_list[0]) if user_lat_list[0] else None,
         float(user_lon_list[0]) if user_lon_list[0] else None,
     )
-
+    
     scraper = ActivityScraper(
-        distance_miles=distance_miles,
-        parks=parks,
-        categories=categories,
-        age_groups=age_groups,
-        open_spots=open_spots,
+        distance_miles=request.form.get('distance'),
+        parks=form_data.get("parks", []),
+        categories=form_data.get("categories", []),
+        age_groups=form_data.get("age_groups", []),
+        open_spots=request.form.get('open_slots',1),
         location=location,
         first_page=first_page
     )
@@ -119,11 +108,7 @@ def load_more():
     current_page = request_data.get('page')  # Get page from client request
 
     if current_page is None:
-        logging.error("Page number is missing in the request.")
         return jsonify({"error": "Page number is missing"}), 400
-
-    # Log the current page for debugging
-    logging.debug(f"Loading activities for page {current_page}")
 
     search_form = session.get("search_form", {})
     if not search_form:
@@ -137,9 +122,6 @@ def load_more():
         session["activities"] = []
 
     session["activities"].extend(activities)  # Extend the existing activities list
-
-    # Log current page for debugging
-    logging.debug(f"Fetched activities for page {current_page}. Total activities so far: {len(session['activities'])}")
 
     return jsonify({
         "activities": activities, 

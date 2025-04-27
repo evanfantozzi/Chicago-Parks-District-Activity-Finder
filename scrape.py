@@ -71,10 +71,13 @@ class ActivityScraper:
 
         # List of activities to return
         self.activities = []
+        
+        
 
     def get_sqlite_connection(self):
         conn = sqlite3.connect(self.db_path)
         conn.enable_load_extension(True)
+        #conn.load_extension(os.getenv("SPATIALITE_PATH", "/opt/homebrew/lib/mod_spatialite.dylib"))
         conn.load_extension(os.getenv("SPATIALITE_PATH", "/usr/lib/x86_64-linux-gnu/mod_spatialite"))
         return conn
 
@@ -128,11 +131,7 @@ class ActivityScraper:
         conn.close()
         return ids
 
-    def set_headers_and_payload(self):
-        self.headers["page_info"] = json.dumps({
-            "order_by": self.order_by,
-            "total_records_per_page": 20
-        })
+    def set_payload(self):
 
         self.payload = {
             "activity_search_pattern": {
@@ -247,8 +246,8 @@ class ActivityScraper:
     def get_activities(self):
         max_pages = 5
         records_per_page = 20
-
-        self.set_headers_and_payload()
+         
+        self.set_payload()
 
         if not self.all_parks and not self.parks:
             return None
@@ -259,8 +258,15 @@ class ActivityScraper:
 
         seen_sessions = set()
 
-        for page_num in range(self.first_page, self.first_page + max_pages + 1):
-            self.payload["page_number"] = page_num
+        for page_num in range(self.first_page, self.first_page + max_pages):
+                    # Set headers and payload
+            print("Searching page",page_num)
+            self.headers["page_info"] = json.dumps({
+                "order_by": self.order_by,
+                "total_records_per_page": 20,
+                'page_number': page_num
+            })   
+            
             response = httpx.post(self.base_url, headers=self.headers, json=self.payload)
             data = response.json()
 
@@ -269,6 +275,7 @@ class ActivityScraper:
                 break
 
             for activity_data in items:
+                
                 key = (
                     activity_data.get('name'),
                     activity_data.get('location', {}).get('label'),
@@ -290,18 +297,19 @@ class ActivityScraper:
                     'time_range': activity_data.get('time_range'),
                     'location': activity_data.get('location', {}).get('label'),
                     'detail_url': activity_data.get('detail_url'),
-                    'action_link': activity_data.get('action_link', {}).get('href') if activity_data.get('action_link') else None
+                    'action_link': activity_data.get('action_link', {}).get('href') if activity_data.get('action_link') else None,
                 })
-
+            
             if len(items) < records_per_page:
                 break
-            elif page_num == self.first_page + max_pages and len(items) == 20:
+            elif page_num == self.first_page + max_pages - 1 and len(items) == 20:
                 # Can paginate
                 self.more_results_to_fetch = True
             else:
                 time.sleep(1)
 
         self.dedeup_activities()
+        
     
     def __str__(self):
         return json.dumps(self.activities, indent=2)
