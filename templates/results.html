@@ -15,35 +15,30 @@
       height: 100vh;
       background: #f9fafb;
     }
-
     .main-container {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
-
     #results {
       flex: 1;
-      overflow-y: auto; /* Allow vertical scrolling for the list of activities */
+      overflow-y: auto;
       padding: 2rem;
       box-sizing: border-box;
       background: #ffffff;
       height: 100vh;
-      overflow-x: hidden; /* Hide horizontal overflow */
+      overflow-x: hidden;
     }
-
     #map {
       flex: 1;
       height: 100vh;
       background: #f4f4f4;
     }
-
     h1 {
       text-align: center;
       color: #155e27;
       margin-bottom: 1rem;
     }
-
     a.back-link {
       display: block;
       text-align: center;
@@ -52,15 +47,13 @@
       font-weight: bold;
       text-decoration: none;
     }
-
     #results-container {
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.5rem;
-      overflow-y: auto; /* Allow scrolling for long lists */
-      height: auto; /* Allow dynamic height */
+      overflow-y: auto;
+      height: auto;
     }
-
     .activity-card {
       background: white;
       padding: 1.25rem;
@@ -68,20 +61,18 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       cursor: pointer;
       overflow: hidden;
-      max-width: 90%; /* Ensure cards are responsive */
+      max-width: 90%;
       word-wrap: break-word;
-      margin-bottom: 1rem; /* Add space between cards */
+      margin-bottom: 1rem;
       margin-left: 10px;
       height: auto;
-      max-height: 400px; /* Maximum height for cards, prevent cards getting too big */
+      max-height: 400px;
       display: flex;
       flex-direction: column;
     }
-
     .card-header {
       margin-bottom: 1rem;
     }
-
     .card-header h2 {
       margin: 0;
       font-size: 1.1rem;
@@ -90,52 +81,43 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .card-header .location {
       font-size: 0.9rem;
       color: #555;
       margin-bottom: 0.5rem;
     }
-
     .activity-card p {
       margin: 0.3rem 0;
       font-size: 0.95rem;
       line-height: 1.4;
     }
-
     .activity-card .desc {
       margin-top: 0.5rem;
       font-style: italic;
       color: #444;
     }
-
     .schedule table {
       border-collapse: collapse;
       font-size: 0.95rem;
       width: 100%;
       margin-top: 0.3rem;
     }
-
     .schedule th, .schedule td {
       padding: 0.25rem 0.5rem;
       vertical-align: top;
     }
-
     .schedule th {
       color: #555;
       text-align: left;
     }
-
     .schedule a {
       color: #155e27;
       font-weight: bold;
       text-decoration: none;
     }
-
     .schedule a:hover {
       text-decoration: underline;
     }
-
     #load-more-btn {
       display: block;
       margin: 2rem auto;
@@ -149,7 +131,6 @@
       cursor: pointer;
       transition: background 0.2s ease-in-out;
     }
-
     #load-more-btn:hover {
       background-color: #005fa3;
     }
@@ -176,12 +157,7 @@
           <div class="schedule">
             <table>
               <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Register</th>
-                  <th>More Info</th>
-                </tr>
+                <tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr>
               </thead>
               <tbody>
                 {% for i in range(activity.date_ranges | length) %}
@@ -228,56 +204,45 @@
   <script>
     let map;
     let parkMarkers = [];
-    let activityCards = new Map(); // Store activity cards by place name
-
+    let activityCards = new Map();
     const parkData = {{ activity_parks | tojson }};
 
     function renderMapMarkers(parkData) {
-        // Add new markers without removing the old ones
-        const bounds = [];
-        parkData.forEach(([name, lat, lon, activities]) => {
-            const existingMarker = parkMarkers.find(marker => marker.placeName === name);
-            if (existingMarker) return; // If marker already exists, don't add it again
+      const bounds = [];
+      parkData.forEach(([name, lat, lon, activities]) => {
+        const existingMarker = parkMarkers.find(marker => marker.placeName === name);
+        if (existingMarker) return;
 
-            // Deduplicate the activities array by converting it to a Set, then back to an array
-            const uniqueActivities = [...new Set(activities)];
-
-            const marker = L.marker([lat, lon]).addTo(map)
-            .bindPopup(`<strong>${name}</strong><br>${uniqueActivities.map(a => `• ${a}`).join('<br>')}`)
-            .on('click', () => openActivityCardByPlace(name)); // Event listener to open activity card by place name
-            marker.placeName = name; // Store the place name for easy lookup
-            parkMarkers.push(marker);
-            bounds.push([lat, lon]);
-    });
-
-  if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
-}
-
+        const uniqueActivities = [...new Set(activities)];
+        const marker = L.marker([lat, lon]).addTo(map)
+          .bindPopup(`<strong>${name}</strong><br>${uniqueActivities.map(a => `• ${a}`).join('<br>')}`)
+          .on('click', () => openActivityCardByPlace(name));
+        marker.placeName = name;
+        parkMarkers.push(marker);
+        bounds.push([lat, lon]);
+      });
+      if (bounds.length > 0) map.fitBounds(bounds, {padding: [35, 35]});
+    }
 
     function openActivityCardByPlace(placeName) {
-      // Find the activity card matching the place name
       const matchingCard = activityCards.get(placeName);
       if (matchingCard) {
-        // Open the card's corresponding marker popup without highlighting
         const matchingMarker = parkMarkers.find(marker => marker.placeName === placeName);
         if (matchingMarker) {
-          matchingMarker.openPopup(); // Open the marker's popup without zooming in
+          matchingMarker.openPopup();
         }
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       const container = document.getElementById('results-container');
-
-      // Handle click events for all activity cards, including dynamically loaded ones
       container.addEventListener('click', (event) => {
         const card = event.target.closest('.activity-card');
         if (!card) return;
-
         const placeName = card.getAttribute('data-place-name');
         const matchingMarker = parkMarkers.find(marker => marker.placeName === placeName);
         if (matchingMarker) {
-          matchingMarker.openPopup(); // Open the marker's popup without zooming in
+          matchingMarker.openPopup();
         }
       });
     });
@@ -291,6 +256,31 @@
       }).addTo(map);
       renderMapMarkers(parkData);
       setTimeout(() => map.invalidateSize(), 200);
+      addUserLocationMarker(); // Add the user's marker after map is ready
+    }
+
+    function addUserLocationMarker() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            L.marker([latitude, longitude], {
+              icon: L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30],
+              })
+            }).addTo(map)
+              .bindPopup('<strong>You are here</strong>');
+          },
+          (error) => {
+            console.error('Error getting user location:', error);
+          }
+        );
+      } else {
+        console.error('Geolocation not supported by this browser.');
+      }
     }
 
     async function loadMoreActivities() {
@@ -300,7 +290,7 @@
 
       try {
         let currentPage = parseInt(sessionStorage.getItem('currentPage')) || 6;
-        sessionStorage.setItem('currentPage', currentPage + 5); // Store the next page number
+        sessionStorage.setItem('currentPage', currentPage + 5);
 
         const res = await fetch('/load_more', {
           method: 'POST',
@@ -322,9 +312,8 @@
         data.activities.forEach(activity => {
           const card = document.createElement('div');
           card.className = 'activity-card';
-          card.setAttribute('data-place-name', activity.location); // Set place name for matching
+          card.setAttribute('data-place-name', activity.location);
 
-          // Generate activity details and append to the card
           card.innerHTML = `
             <div class="card-header">
               <h2>${activity.name}</h2>
@@ -349,17 +338,12 @@
             </div>
             <p class="desc">${activity.desc || ''}</p>
           `;
-
-          container.appendChild(card); // Append new card
-
-          // Store the card in the map by place name for matching
+          container.appendChild(card);
           activityCards.set(activity.location, card);
         });
 
-        // Add new map markers
         renderMapMarkers(data.activity_parks);
 
-        // If no more results to fetch, hide the button
         if (!data.more_results_to_fetch) {
           button.style.display = 'none';
         }
@@ -368,9 +352,8 @@
       }
     }
 
-    // Reset page number when a new search is initiated
     function resetPage() {
-      sessionStorage.setItem('currentPage', 6);  // Reset to page 6
+      sessionStorage.setItem('currentPage', 6);
     }
 
     document.addEventListener('DOMContentLoaded', initMap);
