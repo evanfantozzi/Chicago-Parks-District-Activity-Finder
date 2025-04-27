@@ -10,3 +10,4 @@ wheels/
 .venv
 .env
 flask_session
+uv.lock

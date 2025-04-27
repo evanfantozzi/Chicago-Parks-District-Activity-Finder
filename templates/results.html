@@ -66,7 +66,6 @@
       margin-bottom: 1rem;
       margin-left: 10px;
       height: auto;
-      max-height: 400px;
       display: flex;
       flex-direction: column;
       border: 3px solid #007acc; /* Adjust the color as needed */
@@ -163,12 +162,7 @@
               <tbody>
                 {% for i in range(activity.date_ranges | length) %}
                 <tr>
-                  <td>
-                    {{ activity.date_ranges[i] }}
-                    {% if activity.days[i] and activity.days[i] | length > 0 %}
-                    ({{ activity.days[i] | map('slice', 0, 2) | map('capitalize') | join('/') }})
-                    {% endif %}
-                  </td>
+                  <td>{{ activity.date_ranges[i] }}</td>
                   <td>{{ activity.time_ranges[i] }}</td>
                   <td>
                     {% if activity.action_links[i] %}

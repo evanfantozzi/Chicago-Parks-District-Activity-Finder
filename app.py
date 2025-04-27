@@ -1,23 +1,23 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from scrape import ActivityScraper
-from activity_parks import get_activity_parks
-import sqlite3
 from flask_session import Session
-
+from scrape import ActivityScraper
+from database_utils import get_activity_parks
+import sqlite3
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Use a secure key in production
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-SPATIALITE_PATH = "/opt/homebrew/lib/mod_spatialite.dylib"
+# Paths
 DB_PATH = "chicago_activities.db"
+SPATIALITE_PATH = "/opt/homebrew/lib/mod_spatialite.dylib"
 RESULTS_PATH = "results.html"
 INDEX_PATH = "index.html"
 
-# Utility function: scrape activities
-def use_scraper(form_data, first_page=1):
+# Utility function: scrape activities based on form data
 
+def use_scraper(form_data, first_page=1):
+    """Initializes and uses the ActivityScraper to fetch activities."""
     # Build location tuple using fetched address
     user_lat_list = form_data.get("user_lat", [None])
     user_lon_list = form_data.get("user_lon", [None])
@@ -25,32 +25,44 @@ def use_scraper(form_data, first_page=1):
         float(user_lat_list[0]) if user_lat_list[0] else None,
         float(user_lon_list[0]) if user_lon_list[0] else None,
     )
-    
+
+    # Build distance using form 
+    distance_list = form_data.get("distance", [None])
+    distance_miles = float(distance_list[0]) if distance_list[0] else None
+
+    # Build open spots using form
+    open_spots_list = form_data.get('open_slots', [1])
+    open_spots = int(open_spots_list[0]) if open_spots_list[0] else 1
+
+    # Create scraper instance
     scraper = ActivityScraper(
-        distance_miles=request.form.get('distance'),
+        distance_miles=distance_miles,
         parks=form_data.get("parks", []),
         categories=form_data.get("categories", []),
         age_groups=form_data.get("age_groups", []),
-        open_spots=request.form.get('open_slots',1),
+        open_spots=open_spots,
         location=location,
         first_page=first_page
     )
     scraper.get_activities()
+    scraper.dedeup_activities()
     return scraper.activities, scraper.more_results_to_fetch
 
-
-# "/" Route: Show the blank search form
+# Route: Home page search form
 @app.route("/", methods=["GET"])
 def index():
+    """Renders the main search page with parks, categories, and age groups."""
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
+        # Fetch park data
         cur.execute("SELECT name, latitude, longitude FROM parks")
         parks = [
             {"name": name, "latitude": latitude, "longitude": longitude}
             for name, latitude, longitude in cur.fetchall()
         ]
 
+        # Fetch categories
         cur.execute("""
             SELECT DISTINCT activity 
             FROM activities 
@@ -59,6 +71,7 @@ def index():
         """)
         all_categories = [row[0] for row in cur.fetchall()]
 
+        # Fetch age groups
         cur.execute("""
             SELECT DISTINCT activity 
             FROM activities 
@@ -73,69 +86,68 @@ def index():
                            all_age_groups=all_age_groups,
                            open_spots=1)
 
-
-# "/search" Route: Scrape activities based on user search
+# Route: Search activities
 @app.route("/search", methods=["POST"])
 def search():
-    # turn incoming form into a dict-of-lists so use_scraper always sees lists
+    """Handles form submission and starts an activity search."""
     form_data = request.form.to_dict(flat=False)
 
-    # Reset first page to 6 when a new search is made (since we always start at page 6)
-    session["first_page"] = 1  # Start at page 6 for the first load
+    session["first_page"] = 1 
 
     activities, more_results_to_fetch = use_scraper(form_data)
 
-    # stash everything in session
+    # Store form and activity results in session
     session["search_form"] = form_data
     session["activities"] = activities
     session["more_results_to_fetch"] = more_results_to_fetch
 
     return redirect(url_for("results"))
 
-
-# "/results" Route: Show activities and map
+# Route: Results page
 @app.route("/results")
 def results():
+    """Displays the list of found activities and park map."""
     activities = session.get("activities", [])
     activity_parks = get_activity_parks(activities)
     show_load_more = session.get("more_results_to_fetch", False)
     return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks, show_load_more=show_load_more)
 
-# "/load_more" Route: Load next batch of activities
+# Route: Load more activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
+    """Handles loading additional pages of activities."""
     request_data = request.get_json()
-    current_page = request_data.get('page')  # Get page from client request
+    current_page = request_data.get('page')
 
     if current_page is None:
-        return jsonify({"error": "Page number is missing"}), 400
+        return jsonify({"success": False, "error": "Page number is missing"}), 400
 
     search_form = session.get("search_form", {})
     if not search_form:
-        return jsonify({"error": "Missing search parameters"}), 400
+        return jsonify({"success": False, "error": "Missing search parameters"}), 400
 
-    # Fetch the activities based on the page number
+    # Fetch next batch of activities
     activities, more_results_to_fetch = use_scraper(search_form, first_page=int(current_page))
 
-    # Retrieve the current activities from session and extend them with new activities
     if "activities" not in session:
         session["activities"] = []
 
-    session["activities"].extend(activities)  # Extend the existing activities list
+    session["activities"].extend(activities)
 
     return jsonify({
+        "success": True,
         "activities": activities, 
         "activity_parks": get_activity_parks(activities),
         "more_results_to_fetch": more_results_to_fetch
     })
 
-
-# "/find_nearby_parks" Route: Help users find nearby parks
+# Route: Find nearby parks
 @app.route("/find_nearby_parks", methods=["POST"])
 def find_nearby_parks():
+    """Finds parks near a given latitude/longitude."""
     data = request.get_json()
     lat, lon = data["lat"], data["lon"]
-    radius = float(data.get("radius", 2)) * 1609.34  # miles to meters
+    radius = float(data.get("radius", 2)) * 1609.34  # Convert miles to meters
 
     query = """
         SELECT name, latitude, longitude
@@ -152,11 +164,13 @@ def find_nearby_parks():
         cur.execute(query, (lat, lon, lat, radius))
         results = cur.fetchall()
 
-    return jsonify([
-        {"name": name, "latitude": latitude, "longitude": longitude}
-        for name, latitude, longitude in results
-    ])
-
+    return jsonify({
+        "success": True,
+        "parks": [
+            {"name": name, "latitude": latitude, "longitude": longitude}
+            for name, latitude, longitude in results
+        ]
+    })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="127.0.0.1", port=5002)
