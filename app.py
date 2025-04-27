@@ -85,7 +85,8 @@ def index():
                            open_spots=1)
 
 
-# "/search" Route: Scrape acs=["POST"])
+# "/search" Route: Scrape activities based on user search
+@app.route("/search", methods=["POST"])
 def search():
     # turn incoming form into a dict-of-lists so use_scraper always sees lists
     form_data = request.form.to_dict(flat=False)
