@@ -1,356 +1,356 @@
 <!doctype html>
 <html>
-<head>
-  <title>Find Available Activities in Chicago</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root {
-      --accent: #007acc;
-      --bg: #f9fafb;
-      --border: #ccc;
-      --shadow: rgba(0, 0, 0, 0.08);
-    }
-
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      margin: 0;
-      padding: 2rem 2rem 1rem 2rem;
-      color: #333;
-    }
-
-    h1 {
-  text-align: center;
-  color: #155e27; /* dark green */
-  background: white;
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  display: inline-block;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  margin-bottom: 0.8rem; /* adjust as needed */
-}
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0rem;
-  padding-top: 0.0rem;
-}
-
-.section-header::before,
-.section-header::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background-color: white;
-  margin: 0 1rem;
-  opacity: 0.6;
-}
-
-.section-header h1 {
-  text-align: center;
-  color: #155e27; /* dark green */
-  background: white;
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  display: inline-block;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  margin: 0;
-}
-
-    form {
-    max-width: 100%;   /* previously 720px */
-    width: 90%;
-    margin: 0 auto;
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 16px var(--shadow);
-    }
-
-    .summary-bar {
-      background: #f4f4f4;
-      border: 1px solid var(--border);
-      padding: 0.8em 1em;
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
-      border-radius: 6px;
-      color: #333;
-      line-height: 1.5;
-    }
-
-    fieldset {
-  border: 1px solid #e0e0e0;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-}
-
-    .location-container {
-    flex: 1;
-    max-width: 50%;
-    min-width: 300px;
-    }
-
-    @media (max-width: 768px) {
-    .location-container {
-        max-width: 100%;
-    }
-    }
-
-    .form-panel {
-  background: white;
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  flex: 1;
-  min-width: 300px;
-  max-width: 100%
-}
-.form-section-header {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin: -0.5rem 0 1rem 0.5rem;
-  text-align: center;
-}
-
-    legend {
-    font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 0.1rem; /* reduce space below legend */
-    }
-    .flex-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 1.5rem; /* Adjusts space between elements */
-    align-items: center; /* Aligns both the button and input to the same height */
-  }
-
-    label {
-      margin: 0.4em 0;
-      display: block;
-    }
-
-    .location-container fieldset {
-  margin-top: 0;
-  padding-top: 0;
-}
-
-    .location-container legend {
-    margin-bottom: 0.3rem;
-    }
-
-
-    .flex-col {
-    margin: 0; /* remove vertical spacing */
-    }
-
-    .flex-col label {
-    margin: 0 0 0.3rem 0;
-    }
-
-
-    input[type="number"] {
-      width: 100%;
-      padding: 0.75em;
-      font-size: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-
-    .dropdown-checkbox {
-      position: relative;
-      display: block;
-      width: 100%;
-    }
-
-    .dropdown-toggle {
-  width: 85%;
-  padding: 0.75em;
-  border: 1px solid var(--border);
-  background-color: white;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-
-    .dropdown-toggle:hover {
-      background-color: #f0f0f0;
-    }
-
-    .dropdown-toggle .example {
-      font-size: 0.95rem;
-      color: #555;
-      font-style: italic;
-      margin-left: 0.6rem;
-      opacity: 0.8;
-    }
-
-    .dropdown-checkbox.dropdown-up .dropdown-content {
-  top: auto !important;
-  bottom: 100% !important;
-  margin-top: 2 !important;
-  margin-bottom: 0px;
-  z-index: 9999 !important; /* force on top */
-}
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: white;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      z-index: 10;
-      max-height: 250px;
-      overflow-y: auto;
-      width: 100%;
-      box-shadow: 0px 6px 10px var(--shadow);
-      margin-top: 4px;
-    }
-
-    .dropdown-checkbox.open .dropdown-content {
-      display: block;
-    }
-
-    .dropdown-content label {
-      padding: 0.4em 1em;
-      cursor: pointer;
-    }
-
-    .dropdown-content label:hover {
-      background-color: #f5f5f5;
-    }
-
-    .dropdown-search {
-      width: 85%;
-      padding: 0.6em 1em;
-      border: none;
-      border-bottom: 1px solid #eee;
-      font-size: 1rem;
-      box-sizing: border-box;
-      outline: none;
-    }
-
-    .dropdown-group {
-  font-weight: bold;
-  background-color: #f8f8f8;
-  padding: 0em 0em;
-  border-top: 0px solid #eee;
-}
-
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      align-items: flex-end;
-    }
-
-    .flex-col {
-      flex: 1;
-      min-width: 250px;
-    }
-
-    .or-divider {
-      align-self: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #666;
-      padding: 0 0.75rem;
-      cursor: help;
-    }
-
-    button {
-      display: block;
-      width: 100%;
-      padding: 0.8em;
-      font-size: 1rem;
-      font-weight: bold;
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s ease-in-out;
-    }
-
-    #bg-video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  min-width: 100%;
-  min-height: 100%;
-  object-fit: cover;
-  z-index: -2; /* push it behind the overlay */
-}
-
- 
-    #clear-parks-btn {
-    display: none; /* start hidden */
-    position: absolute;
-    top: 15px;
-    right: 12px;
-    background-color: #e74c3c;
-    color: white;
-    font-size: 0.8rem;
-    border: none;
-    margin-top: 1.5rem;
-    padding: 10px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    transition: background 0.2s ease-in-out;
-    width: auto;
-    min-width: 64px;
-    max-width: 20%;
-    }
-
-    #park-list {
-    display: none;
-    margin-top: 1rem;
-    list-style: none;
-    padding-left: 0;
-    }
-
-    #clear-parks-btn:hover {
-    background-color: #c0392b;
-    }
-
-    
-
-    button:hover {
-      background-color: #005fa3;
-    }
-
-    @media (max-width: 600px) {
-      form {
-        padding: 0rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-  body > div {
-    flex-direction: column;
-  }
-
-  #map, #selected-parks-list {
-    width: 100%;
-    margin-bottom: 1rem
-  }
-
-#clear-parks-btn:hover {
-  background-color: #c0392b;
-}
-
-
-  form {
-    max-width: 100%;
-  }
-}
-  </style>
+    <head>
+        <title>Find Available Activities in Chicago</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        
+        <!-- Add Google Fonts for Roboto Slab -->
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+      
+        <style>
+          :root {
+            --accent: #007acc;
+            --bg: #f9fafb;
+            --border: #ccc;
+            --shadow: rgba(0, 0, 0, 0.08);
+          }
+      
+          body {
+            font-family: 'Montserrat', serif; 
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem 2rem 1rem 2rem;
+            color: #333;
+          }
+      
+          h1 {
+            text-align: center;
+            color: #155e27; /* dark green */
+            background: white;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.8rem; /* adjust as needed */
+          }
+      
+          .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0rem;
+            padding-top: 0.0rem;
+          }
+      
+          .section-header::before,
+          .section-header::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background-color: white;
+            margin: 0 1rem;
+            opacity: 0.6;
+          }
+      
+          .section-header h1 {
+            text-align: center;
+            color: #155e27; /* dark green */
+            background: white;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin: 0;
+          }
+      
+          form {
+            max-width: 100%;   /* previously 720px */
+            width: 90%;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px var(--shadow);
+          }
+      
+          .summary-bar {
+            background: #f4f4f4;
+            border: 1px solid var(--border);
+            padding: 0.8em 1em;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            border-radius: 6px;
+            color: #333;
+            line-height: 1.5;
+          }
+      
+          fieldset {
+            border: 1px solid #e0e0e0;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+          }
+      
+          .location-container {
+            flex: 1;
+            max-width: 50%;
+            min-width: 300px;
+          }
+      
+          @media (max-width: 768px) {
+            .location-container {
+                max-width: 100%;
+            }
+          }
+      
+          .form-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            min-width: 300px;
+            max-width: 100%
+          }
+      
+          .form-section-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: -0.5rem 0 1rem 0.5rem;
+            text-align: center;
+          }
+      
+          legend {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.1rem; /* reduce space below legend */
+          }
+      
+          .flex-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem; /* Adjusts space between elements */
+            align-items: center; /* Aligns both the button and input to the same height */
+          }
+      
+          label {
+            margin: 0.4em 0;
+            display: block;
+          }
+      
+          .location-container fieldset {
+            margin-top: 0;
+            padding-top: 0;
+          }
+      
+          .location-container legend {
+            margin-bottom: 0.3rem;
+          }
+      
+          .flex-col {
+            margin: 0; /* remove vertical spacing */
+          }
+      
+          .flex-col label {
+            margin: 0 0 0.3rem 0;
+          }
+      
+          input[type="number"] {
+            width: 100%;
+            padding: 0.75em;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+          }
+      
+          .dropdown-checkbox {
+            position: relative;
+            display: block;
+            width: 100%;
+          }
+      
+          .dropdown-toggle {
+            width: 85%;
+            padding: 0.75em;
+            border: 1px solid var(--border);
+            background-color: white;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: left;
+          }
+      
+          .dropdown-toggle:hover {
+            background-color: #f0f0f0;
+          }
+      
+          .dropdown-toggle .example {
+            font-size: 0.95rem;
+            color: #555;
+            font-style: italic;
+            margin-left: 0.6rem;
+            opacity: 0.8;
+          }
+      
+          .dropdown-checkbox.dropdown-up .dropdown-content {
+            top: auto !important;
+            bottom: 100% !important;
+            margin-top: 2 !important;
+            margin-bottom: 0px;
+            z-index: 9999 !important; /* force on top */
+          }
+      
+          .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            z-index: 10;
+            max-height: 250px;
+            overflow-y: auto;
+            width: 100%;
+            box-shadow: 0px 6px 10px var(--shadow);
+            margin-top: 4px;
+          }
+      
+          .dropdown-checkbox.open .dropdown-content {
+            display: block;
+          }
+      
+          .dropdown-content label {
+            padding: 0.4em 1em;
+            cursor: pointer;
+          }
+      
+          .dropdown-content label:hover {
+            background-color: #f5f5f5;
+          }
+      
+          .dropdown-search {
+            width: 85%;
+            padding: 0.6em 1em;
+            border: none;
+            border-bottom: 1px solid #eee;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+          }
+      
+          .dropdown-group {
+            font-weight: bold;
+            background-color: #f8f8f8;
+            padding: 0em 0em;
+            border-top: 0px solid #eee;
+          }
+      
+          .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: flex-end;
+          }
+      
+          .flex-col {
+            flex: 1;
+            min-width: 250px;
+          }
+      
+          .or-divider {
+            align-self: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #666;
+            padding: 0 0.75rem;
+            cursor: help;
+          }
+      
+          button {
+            display: block;
+            width: 100%;
+            padding: 0.8em;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out;
+          }
+      
+          #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            z-index: -2; /* push it behind the overlay */
+          }
+      
+          #clear-parks-btn {
+            display: none; /* start hidden */
+            position: absolute;
+            top: 15px;
+            right: 12px;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 0.8rem;
+            border: none;
+            margin-top: 1.5rem;
+            padding: 10px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: background 0.2s ease-in-out;
+            width: auto;
+            min-width: 64px;
+            max-width: 20%;
+          }
+      
+          #park-list {
+            display: none;
+            margin-top: 1rem;
+            list-style: none;
+            padding-left: 0;
+          }
+      
+          #clear-parks-btn:hover {
+            background-color: #c0392b;
+          }
+      
+          button:hover {
+            background-color: #005fa3;
+          }
+      
+          @media (max-width: 600px) {
+            form {
+              padding: 0rem;
+            }
+          }
+      
+          @media (max-width: 768px) {
+            body > div {
+              flex-direction: column;
+            }
+      
+            #map, #selected-parks-list {
+              width: 100%;
+              margin-bottom: 1rem
+            }
+      
+            #clear-parks-btn:hover {
+              background-color: #c0392b;
+            }
+      
+            form {
+              max-width: 100%;
+            }
+          }
+     </style>
 
 <script>
     window.userLocationMarker = null;

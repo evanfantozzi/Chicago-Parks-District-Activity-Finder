@@ -268,7 +268,6 @@ class ActivityScraper:
 
         for page_num in range(self.first_page, self.first_page + max_pages):
                     # Set headers and payload
-            print("Searching page",page_num)
             self.headers["page_info"] = json.dumps({
                 "order_by": self.order_by,
                 "total_records_per_page": 20,
@@ -283,7 +282,6 @@ class ActivityScraper:
                 break
 
             for activity_data in items:
-                print(activity_data)
                 key = (
                     activity_data.get('name'),
                     activity_data.get('location', {}).get('label'),
