@@ -92,7 +92,7 @@ def search():
     form_data = request.form.to_dict(flat=False)
 
     # Reset first page to 6 when a new search is made (since we always start at page 6)
-    session["first_page"] = 6  # Start at page 6 for the first load
+    session["first_page"] = 1  # Start at page 6 for the first load
 
     activities, more_results_to_fetch = use_scraper(form_data)
 
@@ -112,36 +112,35 @@ def results():
     show_load_more = session.get("more_results_to_fetch", False)
     return render_template(RESULTS_PATH, activities=activities, activity_parks=activity_parks, show_load_more=show_load_more)
 
-
 # "/load_more" Route: Load next batch of activities
 @app.route("/load_more", methods=["POST"])
 def load_more():
-    # Get the page number from the request body
     request_data = request.get_json()
-    current_page = int(request_data.get('page'))  # Page sent by the client
+    current_page = request_data.get('page')  # Get page from client request
 
     if current_page is None:
         logging.error("Page number is missing in the request.")
         return jsonify({"error": "Page number is missing"}), 400
 
-    # Fetch the activities for the requested page
+    # Log the current page for debugging
+    logging.debug(f"Loading activities for page {current_page}")
+
     search_form = session.get("search_form", {})
     if not search_form:
         return jsonify({"error": "Missing search parameters"}), 400
 
     # Fetch the activities based on the page number
-    activities, more_results_to_fetch = use_scraper(search_form, first_page=current_page)
+    activities, more_results_to_fetch = use_scraper(search_form, first_page=int(current_page))
 
-    # Append the new activities to the existing list in the session
+    # Retrieve the current activities from session and extend them with new activities
     if "activities" not in session:
         session["activities"] = []
 
-    session["activities"].extend(activities)
+    session["activities"].extend(activities)  # Extend the existing activities list
 
     # Log current page for debugging
     logging.debug(f"Fetched activities for page {current_page}. Total activities so far: {len(session['activities'])}")
 
-    # Return the updated data to the client
     return jsonify({
         "activities": activities, 
         "activity_parks": get_activity_parks(activities),
