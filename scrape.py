@@ -6,6 +6,19 @@ from datetime import datetime
 from datetime import time as dtime
 import os
 
+def normalize_location_name(name):
+    if not name:
+        return name
+    replacements = {
+        " Ctr": " Center",
+        " Pk": " Park",
+        " Fld": " Field",
+        " Cmty": " Community"
+    }
+    for short, full in replacements.items():
+        name = name.replace(short, full)
+    return name
+
 class ActivityScraper:
     def __init__(self, 
                  distance_miles=None,
@@ -72,8 +85,6 @@ class ActivityScraper:
         # List of activities to return
         self.activities = []
         
-        
-
     def get_sqlite_connection(self):
         conn = sqlite3.connect(self.db_path)
         conn.enable_load_extension(True)
@@ -179,7 +190,7 @@ class ActivityScraper:
             grouped[key]["time_ranges"].append(activity.get("time_range", ""))
             grouped[key]["action_links"].append(activity.get("action_link"))
             grouped[key]["detail_links"].append(activity.get("detail_url"))
-            grouped[key]["days"].append(activity.get("days_of_week", ""))  # include here
+            grouped[key]["days"].append(activity.get("days_of_week", ""))  
 
         for act in grouped.values():
             sessions = []
@@ -240,9 +251,6 @@ class ActivityScraper:
 
         self.activities = list(grouped.values())
 
-
-
-
     def get_activities(self):
         max_pages = 5
         records_per_page = 20
@@ -275,7 +283,7 @@ class ActivityScraper:
                 break
 
             for activity_data in items:
-                
+                print(activity_data)
                 key = (
                     activity_data.get('name'),
                     activity_data.get('location', {}).get('label'),
@@ -295,10 +303,11 @@ class ActivityScraper:
                     'category': activity_data.get('category'),
                     'date_range': activity_data.get('date_range'),
                     'time_range': activity_data.get('time_range'),
-                    'location': activity_data.get('location', {}).get('label'),
+                    'location': normalize_location_name(activity_data.get('location', {}).get('label')),
                     'detail_url': activity_data.get('detail_url'),
                     'action_link': activity_data.get('action_link', {}).get('href') if activity_data.get('action_link') else None,
                 })
+                
             
             if len(items) < records_per_page:
                 break
