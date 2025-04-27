@@ -6,14 +6,7 @@
         
         <!-- Add Google Fonts for Roboto Slab -->
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-        <!-- Leaflet CSS -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-        <!-- Leaflet JS -->
-        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-        <!-- Leaflet Control Geocoder CSS and JS -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
+      
         <style>
           :root {
             --accent: #007acc;
@@ -701,77 +694,19 @@
       navigator.geolocation.getCurrentPosition(pos => {
         document.getElementById("user-lat").value = pos.coords.latitude;
         document.getElementById("user-lon").value = pos.coords.longitude;
-        }, err => {
-        console.warn("Geolocation error", err);
-        openAddressModal(); // <-- Automatically open the address popup
-        });
+      });
     });
 </script>
 
-<script>
-    function openAddressModal() {
-        document.getElementById('address-modal').style.display = 'flex';
-
-        // Only initialize geocoder once
-        if (!window.addressGeocoder) {
-            window.addressGeocoder = L.Control.geocoder({
-            defaultMarkGeocode: false,
-            placeholder: 'Enter an address...',
-            collapsed: false
-            })
-            .on('markgeocode', function(e) {
-            const center = e.geocode.center;
-            document.getElementById('user-lat').value = center.lat;
-            document.getElementById('user-lon').value = center.lng;
-            closeAddressModal();
-            alert('Address found! Now you can search.');
-            });
-
-            // Attach the search box inside the modal
-            const container = window.addressGeocoder.onAdd(map); // 'map' already exists
-            document.getElementById('geocoder-container').appendChild(container);
-        }
-    }
 
   
-    function closeAddressModal() {
-      document.getElementById('address-modal').style.display = 'none';
-    }
   
-    async function submitAddress() {
-      const address = document.getElementById('address-input').value.trim();
-      if (!address) {
-        alert('Please enter a valid address.');
-        return;
-      }
-  
-      try {
-        // Use Nominatim (OpenStreetMap free geocoding API)
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-        const data = await response.json();
-  
-        if (data.length === 0) {
-          alert('Address not found. Please try a more specific address.');
-          return;
-        }
-  
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-  
-        // Set lat/lon hidden inputs
-        document.getElementById('user-lat').value = lat;
-        document.getElementById('user-lon').value = lon;
-  
-        closeAddressModal();
-        alert('Address found! Now you can search as normal.');
-      } catch (error) {
-        console.error('Error during geocoding:', error);
-        alert('Error finding address. Please try again.');
-      }
-    }
-  </script>
   
 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   
 </head>
 <body>
@@ -793,9 +728,6 @@
     <h2 class="form-section-header">Build Your Search Here:</h2>
     <fieldset>
         <legend>1. Find Nearby Parks/Facilities</legend>
-        <button type="button" onclick="openAddressModal()" style="margin-top:1rem; background:#007acc; color:white; width:100%; padding:0.7em; font-size:1rem; border:none; border-radius:6px; cursor:pointer;">
-            Enter Address Manually
-          </button>
         <div class="flex-row" style="margin-bottom: 0; margin-top: -1; align-items: center;">
           <div style="flex: 1;">
             <button type="button" id="nearby-btn" onclick="loadNearbyParks()" style="width: 100%;">
@@ -885,20 +817,15 @@
     <input type="hidden" id="user-lon" name="user_lon">
     <button type="submit" style="width: calc(100% - 2rem); margin: 0 0; display: block;">Search</button>
   </div>
+  
 </form>
- 
   
-<div id="address-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:white; padding:2rem; border-radius:10px; width:90%; max-width:400px; box-shadow:0 4px 12px rgba(0,0,0,0.3); position:relative;">
-      <h2 style="margin-top:0;">Enter Your Address</h2>
-      <div id="geocoder-container" style="margin:1rem 0;"></div> <!-- placeholder for search box -->
-      <div style="display:flex; justify-content:space-between; gap:1rem;">
-        <button onclick="closeAddressModal()" style="flex:1; background:#e74c3c; color:white; padding:0.7em; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Cancel</button>
-      </div>
-    </div>
-  </div>
   
+
+  
+      
+      
   
   </body>
-</html>
+  
   
