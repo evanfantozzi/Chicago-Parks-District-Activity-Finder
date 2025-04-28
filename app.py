@@ -6,6 +6,7 @@ import sqlite3
 
 app = Flask(__name__)
 app.config["SESSION_TYPE"] = "filesystem"
+app.static_folder = 'static'
 Session(app)
 
 # Paths
