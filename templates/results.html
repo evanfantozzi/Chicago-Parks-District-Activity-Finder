@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <!-- Your extracted custom CSS -->
-  <link rel="stylesheet" href="static/results.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='results.css') }}">
 </head>
 
 <body>
@@ -79,6 +79,6 @@
   </script>
 
   <!-- Your extracted custom JS -->
-  <script src="static/results.js"></script>
+  <script src="{{ url_for('static', filename='results.js') }}"></script>
 </body>
 </html>
