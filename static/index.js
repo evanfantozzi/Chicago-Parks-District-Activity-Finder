@@ -251,6 +251,47 @@ const DropdownManager = {
         document.querySelectorAll(".dropdown-toggle").forEach(btn => {
             btn.addEventListener("click", () => btn.closest(".dropdown-checkbox").classList.toggle("open"));
         });
+
+        // Filter dropdown items as the user types
+        document.querySelectorAll(".dropdown-search").forEach(input => {
+            input.addEventListener("input", () => {
+                const filter = input.value.toLowerCase();
+                const dropdown = input.closest(".dropdown-checkbox").querySelector(".dropdown-content");
+
+                let currentGroup = null;
+                let groupHasMatch = false;
+
+                dropdown.querySelectorAll(".dropdown-group, label").forEach(el => {
+                    if (el.classList.contains("dropdown-group")) {
+                        if (currentGroup && !groupHasMatch) {
+                            currentGroup.style.display = "none";
+                        }
+                        currentGroup = el;
+                        groupHasMatch = false;
+                        el.style.display = "none";
+                    } else {
+                        const match = el.textContent.toLowerCase().includes(filter);
+                        el.style.display = match ? "block" : "none";
+                        if (match && currentGroup) {
+                            groupHasMatch = true;
+                            currentGroup.style.display = "block";
+                        }
+                    }
+                });
+
+                if (currentGroup && !groupHasMatch) {
+                    currentGroup.style.display = "none";
+                }
+            });
+
+            // Prevent Enter key from submitting form
+            input.addEventListener("keydown", e => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                }
+            });
+        });
+
         document.addEventListener("click", e => {
             let closed = false;
             document.querySelectorAll(".dropdown-checkbox.open").forEach(dd => {
@@ -259,7 +300,7 @@ const DropdownManager = {
                     closed = true;
                 }
             });
-        
+
             if (closed) {
                 FilterManager.updateGroupToggles();
                 FilterManager.updateSummary();
@@ -267,6 +308,7 @@ const DropdownManager = {
         });
     }
 };
+
 
 // --- DOM READY ---
 document.addEventListener("DOMContentLoaded", () => {
