@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 from flask_session import Session
 from scrape import ActivityScraper
 from database_utils import get_activity_parks
 import sqlite3
+import os 
 
 app = Flask(__name__)
 app.config["SESSION_TYPE"] = "filesystem"
@@ -15,8 +16,11 @@ SPATIALITE_PATH = "/opt/homebrew/lib/mod_spatialite.dylib"
 RESULTS_PATH = "results.html"
 INDEX_PATH = "index.html"
 
-# Utility function: scrape activities based on form data
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory(os.path.join(app.root_path, 'static'), filename)
 
+# Utility function: scrape activities based on form dat
 def use_scraper(form_data, first_page=1):
     """Initializes and uses the ActivityScraper to fetch activities."""
     # Build location tuple using fetched address
