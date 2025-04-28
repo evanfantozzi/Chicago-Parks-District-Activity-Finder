@@ -16,10 +16,6 @@ SPATIALITE_PATH = "/opt/homebrew/lib/mod_spatialite.dylib"
 RESULTS_PATH = "results.html"
 INDEX_PATH = "index.html"
 
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory(os.path.join(app.root_path, 'static'), filename)
-
 # Utility function: scrape activities based on form dat
 def use_scraper(form_data, first_page=1):
     """Initializes and uses the ActivityScraper to fetch activities."""
