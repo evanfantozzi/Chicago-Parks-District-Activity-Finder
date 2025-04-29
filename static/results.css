@@ -153,3 +153,19 @@ body {
     }
   }
   
+  @media (max-width: 600px) {
+    .activity-card {
+      font-size: 0.85rem; /* or smaller if needed */
+    }
+  
+    .activity-card h2 {
+      font-size: 1rem;
+    }
+  
+    .activity-card p,
+    .activity-card .location,
+    .activity-card .category {
+      font-size: 0.75rem;
+    }
+  }
+  
