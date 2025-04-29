@@ -147,3 +147,9 @@ body {
     background-color: #005fa3;
   }
   
+  @media (max-width: 768px) {
+    #map {
+      display: none;
+    }
+  }
+  
