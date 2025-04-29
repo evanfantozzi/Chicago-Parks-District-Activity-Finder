@@ -7,20 +7,20 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="/static/index.css" />
+    <!-- Stylesheets/CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <!-- JavaScript Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
+    <script src="/static/index.js"></script>
+    <link rel="stylesheet" href="/static/index.css" />
+
 
     <!-- Pass Server Data (Parks) -->
     <script>
       window.allParks = {{ parks|tojson }};
     </script>
 
-    <!-- Your Main JS -->
-    <script src="/static/index.js"></script>
 </head>
 
 <body>

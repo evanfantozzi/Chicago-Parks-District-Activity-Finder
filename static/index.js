@@ -7,53 +7,158 @@ const AppState = {
     userLatLng: null  // User's latitude and longitude
 };
 
+// -- HELPER FUNCTION TO COMPUTE HAVERSINE DISTANCE--
+function haversineDistance([lat1, lon1], [lat2, lon2]) {
+    const toRad = x => x * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+    return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// -- HELPER FUNCTION TO AVOID AUTOFILL--
+function disableAutocompleteOnGeoSearch() {
+    setTimeout(() => {
+        const searchInput = document.querySelector('.leaflet-control.geosearch input');
+        if (searchInput) {
+            searchInput.setAttribute('autocomplete', 'off');
+            searchInput.setAttribute('autocorrect', 'off');
+            searchInput.setAttribute('autocapitalize', 'off');
+            searchInput.setAttribute('spellcheck', 'false');
+            searchInput.setAttribute('type', 'search');
+            searchInput.setAttribute('name', 'geo-address');
+        }
+    }, 500);
+}
+
+
 // --- MAP MANAGEMENT ---
 const MapManager = {
-    // Initializes the map and adds the base tile layer
     init() {
-        AppState.map = L.map("map").setView([41.8781, -87.6298], 11.5);  // Set initial map center and zoom level
+        AppState.map = L.map("map").setView([41.8781, -87.6298], 11.5);
         L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", {
-            attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO', // Attribution for map tiles
-            subdomains: "abcd",  // Subdomains for map tiles
-            maxZoom: 19  // Maximum zoom level
-        }).addTo(AppState.map);  // Add the tile layer to the map
+            attribution: '&copy; OpenStreetMap & contributors, &copy; CARTO',
+            subdomains: "abcd",
+            maxZoom: 19
+        }).addTo(AppState.map);
+    
+        const chicagoCenter = [41.8781, -87.6298];
+    
+        function haversineDistance([lat1, lon1], [lat2, lon2]) {
+            const toRad = x => x * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+            return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+    
+        let showSearch = false;
+        if (!AppState.userLatLng) {
+            showSearch = true;
+        } else {
+            const distanceToChicago = haversineDistance(AppState.userLatLng, chicagoCenter);
+            if (distanceToChicago > 75) {
+                showSearch = true;
+            }
+        }
+    
+        if (showSearch) {
+            const provider = new window.GeoSearch.OpenStreetMapProvider({
+                params: {
+                    viewbox: '-91.5, 42.5, -87, 37',
+                    bounded: 1
+                }
+            });
+    
+            const search = new window.GeoSearch.GeoSearchControl({
+                provider: provider,
+                style: 'bar',
+                position: 'bottomleft',
+                autoComplete: true,
+                autoCompleteDelay: 250,
+                showMarker: false,
+                marker: false,
+                showPopup: true,
+                retainZoomLevel: false,
+                animateZoom: true,
+                searchLabel: 'Manually Enter Location Here'
+            });
+    
+            AppState.map.addControl(search);
+    
+            const geoControl = document.querySelector(".leaflet-control.geosearch");
+            const leafletContainer = document.querySelector(".leaflet-control-container");
+            if (geoControl && leafletContainer) {
+                leafletContainer.appendChild(geoControl);
+            }
+    
+            disableAutocompleteOnGeoSearch();
+    
+            AppState.map.on('geosearch/showlocation', function(result) {
+                console.log("GEOSEARCH triggered", result);
+                const label = result.location?.label || "";
+                
+                if (!label.toLowerCase().includes("illinois")) {
+                    alert("Please select a location within Illinois.");
+                    return;
+                }
+    
+                const { x, y } = result.location;
+                AppState.userLatLng = [y, x];
+                document.getElementById("user-lat").value = y;
+                document.getElementById("user-lon").value = x;
+    
+                ParkSelector.populateDropdown();
+                MapManager.addUserMarker(AppState.userLatLng);
+                NearbyParks.loadNearby();
+            });
+        }
     },
 
-    // Adds a user location marker to the map
     addUserMarker(latlng) {
         if (AppState.userLocationMarker) {
-            AppState.map.removeLayer(AppState.userLocationMarker); // Remove existing marker if it exists
+            AppState.map.removeLayer(AppState.userLocationMarker);
         }
         AppState.userLocationMarker = L.marker(latlng, {
             icon: L.icon({
-                iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",  // Icon for user's location
-                iconSize: [27, 43],  // Size of the icon
-                iconAnchor: [13, 41],  // Anchor position of the icon
-                popupAnchor: [0, -36]  // Popup anchor
+                iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
+                iconSize: [27, 43],
+                iconAnchor: [13, 41],
+                popupAnchor: [0, -36]
             })
-        }).addTo(AppState.map).bindPopup("You are here").openPopup();  // Add marker and popup for "You are here"
+        }).addTo(AppState.map).bindPopup("You are here").openPopup();
+
+        // optional: fly smoothly to new marker
+        AppState.map.flyTo(latlng, 13);
     },
 
-    // Renders park markers on the map
     renderMarkers(parks) {
-        AppState.mapMarkers.forEach(m => m.remove());  // Remove existing markers from the map
-        AppState.mapMarkers = parks.map(p => L.marker([p.latitude, p.longitude]).addTo(AppState.map).bindPopup(p.name));  // Add new markers for parks
+        AppState.mapMarkers.forEach(m => m.remove());
+        AppState.mapMarkers = parks.map(p => 
+            L.marker([p.latitude, p.longitude])
+             .addTo(AppState.map)
+             .bindPopup(p.name)
+        );
     },
 
-    // Centers the map view based on the parks' locations
     centerView(parks) {
-        const bounds = parks.map(p => [p.latitude, p.longitude]);  // Get the latitude and longitude of the parks
-        if (AppState.userLocationMarker) bounds.push(AppState.userLocationMarker.getLatLng());  // Add user location marker if it exists
-        if (bounds.length) AppState.map.fitBounds(bounds, {padding: [35, 35]});  // Fit the map to include all markers
-        else AppState.map.setView([41.8781, -87.6298], 11.5);  // Default map view if no parks are available
+        const bounds = parks.map(p => [p.latitude, p.longitude]);
+        if (AppState.userLocationMarker) {
+            bounds.push(AppState.userLocationMarker.getLatLng());
+        }
+        if (bounds.length) {
+            AppState.map.fitBounds(bounds, { padding: [35, 35] });
+        } else {
+            AppState.map.setView([41.8781, -87.6298], 11.5);
+        }
     },
 
-    // Clears all markers from the map
     clear() {
-        AppState.mapMarkers.forEach(m => m.remove());  // Remove all markers
-        AppState.mapMarkers = [];  // Reset the array of markers
+        AppState.mapMarkers.forEach(m => m.remove());
+        AppState.mapMarkers = [];
     }
 };
+
 
 // --- PARK SELECTION ---
 const ParkSelector = {
@@ -312,23 +417,40 @@ const DropdownManager = {
 
 // --- DOM READY ---
 document.addEventListener("DOMContentLoaded", () => {
-    AppState.allParks = window.allParks || [];  // Initialize parks data
-    MapManager.init();  // Initialize the map
-    FilterManager.enforceAnyCheckboxes();  // Enforce the "Any" checkbox behavior
-    FilterManager.setupGroupToggles();  // Set up the group toggles for categories
-    DropdownManager.setup();  // Set up the dropdown functionality
+    AppState.allParks = window.allParks || [];
 
-    // Event listener for the distance input to update the button label
+    // Try to get user's location first
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            AppState.userLatLng = [pos.coords.latitude, pos.coords.longitude];
+            document.getElementById("user-lat").value = pos.coords.latitude;
+            document.getElementById("user-lon").value = pos.coords.longitude;
+
+            MapManager.init();  // init after location is known
+            ParkSelector.populateDropdown();
+            MapManager.addUserMarker(AppState.userLatLng);
+            NearbyParks.loadNearby();
+        },
+        err => {
+            console.warn("Geolocation failed, falling back to alphabetical park list:", err);
+            MapManager.init();  // init anyway
+            ParkSelector.populateDropdown();
+            FilterManager.updateSummary();
+        }
+    );
+
+    FilterManager.enforceAnyCheckboxes();
+    FilterManager.setupGroupToggles();
+    DropdownManager.setup();
+
     document.getElementById("distance").addEventListener("input", () => {
         NearbyParks.updateButtonLabel();
         FilterManager.updateSummary();
         FilterManager.updateGroupToggles();
     });
 
-    // Event listener for clearing park selections
     document.getElementById("clear-parks-btn").addEventListener("click", ParkSelector.clearSelection);
 
-    // Prevent form submission if no parks or distance is selected
     document.querySelector("form").addEventListener("submit", e => {
         const hasDistance = document.getElementById("distance").value.trim();
         const hasParks = document.querySelectorAll('input[name="parks"]:checked').length;
@@ -337,25 +459,5 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("form-summary").innerHTML = `<span style="color: red; font-weight: bold;">Please enter a distance or select at least one park before submitting.</span>`;
         }
     });
-
-    // Get user's geolocation and initialize map and parks
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            // Successfully got user location
-            AppState.userLatLng = [pos.coords.latitude, pos.coords.longitude];
-            document.getElementById("user-lat").value = pos.coords.latitude;
-            document.getElementById("user-lon").value = pos.coords.longitude;
-    
-            ParkSelector.populateDropdown(); // Populate dropdown sorted by distance
-            MapManager.addUserMarker(AppState.userLatLng); // Add "You are here" marker
-            NearbyParks.loadNearby(); // Auto-check parks within distance
-        },
-        err => {
-            // Failed to get user location (user denied, blocked, or error)
-            console.warn("Geolocation failed, falling back to alphabetical park list:", err);
-    
-            ParkSelector.populateDropdown(); // Populate parks alphabetically
-        }
-    );
-    
 });
+
