@@ -3,7 +3,7 @@ import json
 from time import sleep
 from datetime import datetime, time 
 
-from database_utils import (
+from app.database_utils import (
     set_park_ids_by_distance,
     set_park_ids_by_name,
     get_activity_ids_by_name,
@@ -35,7 +35,7 @@ class ActivityScraper:
         Initializes an ActivityScraper instance with search filters and default settings.
         """
         # Default search parameters
-        self.db_path = "chicago_activities.db"
+        self.db_path = "data/chicago_activities.db"
         self.location = location
         self.first_page = first_page
         self.order_by = order_by

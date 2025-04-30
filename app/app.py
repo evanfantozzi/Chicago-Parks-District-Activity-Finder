@@ -1,15 +1,17 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 from flask_session import Session
-from scrape import ActivityScraper
-from database_utils import get_activity_parks
+from app.scrape import ActivityScraper
+from app.database_utils import get_activity_parks, DB_PATH
 import sqlite3
 
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder="../templates",
+            static_folder="../static")
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Paths
-DB_PATH = "chicago_activities.db"
+DB_PATH = "data/chicago_activities.db"
 SPATIALITE_PATH = "/opt/homebrew/lib/mod_spatialite.dylib"
 RESULTS_PATH = "results.html"
 INDEX_PATH = "index.html"

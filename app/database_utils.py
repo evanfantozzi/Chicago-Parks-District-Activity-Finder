@@ -1,8 +1,10 @@
 import sqlite3
 import os
-DB_PATH = "chicago_activities.db"
 
-def get_sqlite_connection(db_path="chicago_activities.db"):
+# Database Path
+DB_PATH = "data/chicago_activities.db"
+
+def get_sqlite_connection(db_path=DB_PATH):
     """
     Opens a connection to the SQLite database with SpatiaLite extension enabled.
 
@@ -20,7 +22,7 @@ def get_sqlite_connection(db_path="chicago_activities.db"):
         conn.load_extension(os.getenv("SPATIALITE_PATH", "/opt/homebrew/lib/mod_spatialite.dylib"))
     return conn
 
-def set_park_ids_by_distance(location, distance_miles=None, distance_km=0, db_path="chicago_activities.db"):
+def set_park_ids_by_distance(location, distance_miles=None, distance_km=0, db_path=DB_PATH):
     """
     Finds parks within a specified distance from a location.
 
@@ -60,7 +62,7 @@ def set_park_ids_by_distance(location, distance_miles=None, distance_km=0, db_pa
     conn.close()
     return parks
 
-def set_park_ids_by_name(names, db_path="chicago_activities.db"):
+def set_park_ids_by_name(names, db_path=DB_PATH):
     """
     Finds park IDs that match a list of park names.
 
@@ -79,7 +81,7 @@ def set_park_ids_by_name(names, db_path="chicago_activities.db"):
     conn.close()
     return parks
 
-def get_activity_ids_by_name(names, db_path="chicago_activities.db"):
+def get_activity_ids_by_name(names, db_path=DB_PATH):
     """
     Finds activity IDs that match a list of activity names.
 
