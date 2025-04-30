@@ -31,4 +31,4 @@ ENV SPATIALITE_PATH=/usr/lib/x86_64-linux-gnu/mod_spatialite
 EXPOSE 10000
 
 # Start Flask app
-CMD ["gunicorn", "app:app"]
+CMD ["gunicorn", "app.app:app"]
