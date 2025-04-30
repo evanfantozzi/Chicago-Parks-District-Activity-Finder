@@ -154,17 +154,22 @@ body {
   }
   
   @media (max-width: 600px) {
-    .activity-card {
-      font-size: 0.85rem; /* or smaller if needed */
+    .activity-card table,
+    .activity-card table th,
+    .activity-card table td {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.4rem;
     }
   
     .activity-card h2 {
       font-size: 1rem;
     }
   
-    .activity-card p,
-    .activity-card .location,
-    .activity-card .category {
+    .activity-card p {
+      font-size: 0.8rem;
+    }
+  
+    .activity-card .desc {
       font-size: 0.75rem;
     }
   }
