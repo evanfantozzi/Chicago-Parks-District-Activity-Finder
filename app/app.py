@@ -32,8 +32,8 @@ def use_scraper(form_data, first_page=1):
     distance_miles = float(distance_list[0]) if distance_list[0] else None
 
     # Build open spots using form
-    open_spots_list = form_data.get('open_slots', [1])
-    open_spots = int(open_spots_list[0]) if open_spots_list[0] else 1
+    open_slots_list = form_data.get('open_slots', [1])
+    open_slots = int(open_slots_list[0]) if open_slots_list[0] else 1
 
     # Create scraper instance
     scraper = ActivityScraper(
@@ -41,7 +41,7 @@ def use_scraper(form_data, first_page=1):
         parks=form_data.get("parks", []),
         categories=form_data.get("categories", []),
         age_groups=form_data.get("age_groups", []),
-        open_spots=open_spots,
+        open_slots=open_slots,
         location=location,
         first_page=first_page
     )
@@ -85,7 +85,7 @@ def index():
                            parks=parks,
                            all_categories=all_categories,
                            all_age_groups=all_age_groups,
-                           open_spots=1)
+                           open_slots=1)
 
 # Route: Search activities
 @app.route("/search", methods=["POST"])

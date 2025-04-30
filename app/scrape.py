@@ -4,10 +4,8 @@ from time import sleep
 from datetime import datetime, time 
 
 from app.database_utils import (
-    set_park_ids_by_distance,
-    set_park_ids_by_name,
-    get_activity_ids_by_name,
-    normalize_location_name
+    db_names_to_ids,
+    clean_park_facility_name
 )
 
 class ActivityScraper:
@@ -15,27 +13,25 @@ class ActivityScraper:
     A class to scrape activities from the Chicago Park District system.
     Fetches and organizes activities based on parks, distance, categories, age groups, etc.
     """
-    MAX_PAGES = 5
-    RECORDS_PER_PAGE = 20
+    MAX_PAGES_PER_SCRAPE = 5 # Show 5 pages of results at a time 
+    RECORDS_PER_PAGE = 20 # Each page has 20 results
 
     def __init__(self, 
-                 distance_miles=None,
-                 distance_km=None,
-                 parks=[], 
-                 location=(41.7943, -87.5907),
-                 categories=[], 
-                 age_groups=[], 
-                 open_spots=1, 
-                 min_age=None, 
-                 max_age=None, 
-                 days_of_week=None, 
-                 order_by="Name",
-                 first_page=1):
-        """
-        Initializes an ActivityScraper instance with search filters and default settings.
-        """
+                 distance_miles=None, # Not using at the moment
+                 distance_km=None, # Not using at the moment
+                 parks=[], # List of desired parks/facilities
+                 location=(41.7943, -87.5907), # Default to downtown
+                 categories=[], # List of desired activity categories
+                 age_groups=[], # List of desired activity age groups
+                 open_slots=1, # How many slots needed for activity
+                 min_age=None, # Not using at the moment
+                 max_age=None, # Not using at the moment
+                 days_of_week=None, # Not using at the moment
+                 order_by="Name", # Not using at the moment
+                 first_page=1 # First page to start scraping
+                 ): 
+
         # Default search parameters
-        self.db_path = "data/chicago_activities.db"
         self.location = location
         self.first_page = first_page
         self.order_by = order_by
@@ -45,29 +41,15 @@ class ActivityScraper:
             "X-Requested-With": "XMLHttpRequest",
         }
 
-        # Binary flags - for whether all categories/age groups/parks were searched
-        self.all_categories = False
-        self.all_age_groups = False 
-        self.all_parks = False
-
-        # Set to true if last page of searches reached and still have more results
+        # Binary flag - set to true if last page of searches reached and still have more results
         self.more_results_to_fetch = False
 
-        # If any categories/age groups passed in, convert their names to IDs
-        if categories:
-            self.categories = get_activity_ids_by_name(categories, self.db_path)
-        else:
-            self.all_categories = True
-            self.categories = None
-        
-        if age_groups:
-            self.age_groups = get_activity_ids_by_name(age_groups, self.db_path)
-        else:
-            self.all_age_groups = True
-            self.age_groups = None
-        
-        # Open spots preset to 1
-        self.open_spots = open_spots
+        # If specific categories/age groups passed in, convert their names to IDs
+        self.categories = db_names_to_ids(categories, "activities") if categories else []
+        self.age_groups = db_names_to_ids(age_groups, "activities") if age_groups else []
+
+        # Open slots preset to 1
+        self.open_slots = open_slots
         
         # Other search queries - unused for now 
         self.min_age = min_age
@@ -75,28 +57,14 @@ class ActivityScraper:
         self.days_of_week = days_of_week
 
         # Convert list of park names to IDs
-        if parks == "[All]":
-            self.parks = []
-            self.all_parks = True 
-        elif parks:
-            self.parks = set_park_ids_by_name(parks, self.db_path)
-        else:
-            self.parks = set_park_ids_by_distance(self.location, distance_miles, distance_km, self.db_path)
+        self.parks = db_names_to_ids(parks, "parks")
 
+        # To fill with self.get_activities()
         self.activities = []
-
-    def can_search(self):
-        """
-        Confirms that for each of parks, age_groups, categories, there is always
-        either "all" selected or at least one specified
-        """
-        return ((self.all_parks or self.parks) and 
-                (self.all_age_groups or self.age_groups) and 
-                (self.all_categories or self.categories))
 
     def build_headers(self, page_num):
         """
-        Takes in page number and builds headers in scraper
+        Takes in page number and builds headers for scraper
         """
         headers = self.headers.copy()
         headers["page_info"] = json.dumps({
@@ -119,7 +87,7 @@ class ActivityScraper:
             "sessions": []
         }
 
-    def parse_session(self, date_text, time_text):
+    def start_date_time(self, date_text, time_text):
         """
         Parses session start date and time from text formats.
         """
@@ -140,29 +108,41 @@ class ActivityScraper:
 
         return start_date, start_time
 
-    def build_sorted_sessions(self, session_list):
+    def build_sorted_sessions_list(self, session_list):
         """
         Sorts a list of session dictionaries by start date and time.
         """
         sessions = []
 
         for session in session_list:
-            start_date, start_time = self.parse_session(session["date_range"], session["time_range"])
+            start_date, start_time = self.start_date_time(session["date_range"], session["time_range"])
             weekday = start_date.strftime("%A")
-            labeled_date = f"{session['date_range']} ({weekday})"
+            
+            if " to " in session["date_range"]:
+                # Repeating event 
+                date_range = f"{session['date_range']} ({weekday}s)"
+            else:
+                # One off event
+                date_range = f"{session['date_range']} ({weekday})"
 
+            # Append information to include in sorted session table on results page
             sessions.append((
+                
+                # Start_date and time only used for sorting (not kept)
                 start_date,
                 start_time,
-                labeled_date,
+                
+                # Returned per activity after sorting
+                date_range,
                 session["time_range"],
                 session["action_link"],
                 session["detail_link"],
                 session["days"]
             ))
-
+            
+        # Sort and return date_range, time_range, action link, detail_link, days
         sessions.sort()
-        return sessions
+        return [session[2:] for session in sessions]
 
     def unpack_sessions(self, sorted_sessions):
         """
@@ -172,16 +152,18 @@ class ActivityScraper:
         time_ranges = []
         action_links = []
         detail_links = []
-        days_list = []
+        days = []
 
         for sorted_session in sorted_sessions:
-            date_ranges.append(sorted_session[2])
-            time_ranges.append(sorted_session[3])
-            action_links.append(sorted_session[4])
-            detail_links.append(sorted_session[5])
-            days_list.append(sorted_session[6])
+            date_range, time_range, action_link, detail_link, day = sorted_session
+            
+            date_ranges.append(date_range)
+            time_ranges.append(time_range)
+            action_links.append(action_link)
+            detail_links.append(detail_link)
+            days.append(day)
 
-        return date_ranges, time_ranges, action_links, detail_links, days_list
+        return date_ranges, time_ranges, action_links, detail_links, days
 
     def parse_activity(self, activity_data):
         """
@@ -195,7 +177,7 @@ class ActivityScraper:
             "category": activity_data.get("category"),
             "date_range": activity_data.get("date_range"),
             "time_range": activity_data.get("time_range"),
-            "location": normalize_location_name(activity_data.get("location", {}).get("label")),
+            "location": clean_park_facility_name(activity_data.get("location", {}).get("label")),
             "detail_url": activity_data.get("detail_url"),
             "action_link": activity_data.get("action_link", {}).get("href") if activity_data.get("action_link") else None,
             "days_of_week": activity_data.get("days_of_week", "")
@@ -207,15 +189,15 @@ class ActivityScraper:
         """
         self.payload = {
             "activity_search_pattern": {
-                "activity_select_param": 2,
-                "days_of_week": self.days_of_week,
+                "activity_select_param": 2, # Type of results returned, standard
                 "center_ids": self.parks,
-                "open_spots": self.open_spots,
-                "activity_id": None,
+                "open_spots": self.open_slots,
                 "activity_category_ids": self.age_groups,
-                "min_age": self.min_age,
                 "activity_other_category_ids": self.categories,
-                "max_age": self.max_age,
+                # "activity_id": None, # Not currently using in our query format
+                # "days_of_week": self.days_of_week, - Not currently used
+                # "min_age": self.min_age, - Not currently used
+                # "max_age": self.max_age, - Not currently used
             },
             "activity_transfer_pattern": {}
         }
@@ -260,9 +242,9 @@ class ActivityScraper:
         self.activities = []
         for activity in grouped.values():
             # For each grouped activity, sort the sessions
-            sorted_sessions = self.build_sorted_sessions(activity["sessions"])
+            sorted_sessions = self.build_sorted_sessions_list(activity["sessions"])
             date_ranges, time_ranges, action_links, detail_links, days_list = self.unpack_sessions(sorted_sessions)
-            del activity["sessions"]
+            del activity["sessions"] 
 
             # Set lists of dates/times/links/days of week for activity
             activity["date_ranges"] = date_ranges
@@ -277,15 +259,11 @@ class ActivityScraper:
         """
         Main function that executes the scraping of activities based on filters.
         """
-        if not self.can_search():
-            # Double check that at least one location selected, 
-            # and that for categories/age groups either "all" or at 1+ specified values
-            return None
 
         self.set_payload()
 
         # Loop through 5 pages of results (100 results)
-        for page_num in range(self.first_page, self.first_page + self.MAX_PAGES):
+        for page_num in range(self.first_page, self.first_page + self.MAX_PAGES_PER_SCRAPE):
 
             # Make request, confirm that response has items
             response = httpx.post(self.base_url, headers=self.build_headers(page_num), json=self.payload)
@@ -301,7 +279,7 @@ class ActivityScraper:
             if len(items) < self.RECORDS_PER_PAGE:
                 # If reached end of results, break out of loop
                 break
-            elif page_num == self.first_page + self.MAX_PAGES - 1 and len(items) == self.RECORDS_PER_PAGE:
+            elif page_num == self.first_page + self.MAX_PAGES_PER_SCRAPE - 1 and len(items) == self.RECORDS_PER_PAGE:
                 # Got max results on last page, assume there are more results to fetch
                 self.more_results_to_fetch = True
             else:
