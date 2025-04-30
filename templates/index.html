@@ -1,69 +1,75 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>Find Available Activities in Chicago</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Find Available Activities in Chicago</title>
     
-    <!-- Fonts -->
+    <!-- Fonts: Montserrat from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Stylesheets/CSS -->
+
+    <!-- Stylesheets for Leaflet and custom styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css" />
+    <link rel="stylesheet" href="/static/index.css" />
+
+    <!-- Scripts for Leaflet and Leaflet-Geosearch -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
     <script src="/static/index.js"></script>
-    <link rel="stylesheet" href="/static/index.css" />
 
-
-    <!-- Pass Server Data (Parks) -->
+    <!-- Pass server data (list of parks) to JavaScript -->
     <script>
-      window.allParks = {{ parks|tojson }};
+        window.allParks = {{ parks|tojson }};  <!-- Django template variable for parks -->
     </script>
-
 </head>
 
 <body>
+    <!-- Background video that plays on loop -->
     <video autoplay muted loop id="bg-video">
         <source src="static/video.mp4" type="video/mp4" />
         Your browser does not support HTML5 video.
     </video>
 
+    <!-- Section Header -->
     <div class="section-header">
         <h1>Find Available Activities in Chicago</h1>
     </div>
 
+    <!-- Hidden list of parks for internal use -->
     <ul id="park-list" style="display: none; list-style: none; padding-left: 0;"></ul>
 
+    <!-- Main Search Form -->
     <form method="post" action="/search" style="background: transparent; box-shadow: none;">
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
     
-            <!-- LEFT BLOCK -->
+            <!-- LEFT BLOCK: User input section -->
             <div class="form-panel">
                 <h2 class="form-section-header">Build Your Search Here:</h2>
 
+                <!-- Section 1: Find Nearby Parks -->
                 <fieldset>
                     <legend>1. Find Nearby Parks/Facilities</legend>
                     <div class="flex-row" style="margin-bottom: 0; align-items: center;">
                         <div style="flex: 1;">
-                            <button type="button" id="nearby-btn" onclick="NearbyParks.loadNearby()" style="width: 100%;">
-                            Look For Locations Within 2 Miles
-                            </button>
+                            <!-- Button to search nearby parks -->
+                            <button type="button" id="nearby-btn" onclick="NearbyParks.loadNearby()" style="width: 100%;">Look For Locations Within 2 Miles</button>
                         </div>
                         <div style="flex: 0.5;">
                             <label for="distance">Miles away:</label>
-                            <input id="distance" name="distance" type="number" step="0.1" value="2" placeholder="e.g. 2"
-                                style="width: 100%; padding: 0.4em 0.6em; font-size: 0.9rem;">
+                            <input id="distance" name="distance" type="number" step="0.1" value="2" placeholder="e.g. 2" style="width: 100%; padding: 0.4em 0.6em; font-size: 0.9rem;">
                         </div>
                     </div>
                 </fieldset>
 
+                <!-- Section 2: Select Activity Types -->
                 <fieldset>
                     <legend>2. Select Your Preferred Type(s) of Activities</legend>
                     <label><input type="checkbox" name="any_categories" id="any_categories" checked> Any</label>
                     <div class="dropdown-checkbox">
                         <div class="dropdown-toggle">Select Activities <span class="example">(e.g. {{ all_categories[14].split(' - ')[-1] }})</span></div>
                         <div class="dropdown-content">
+                            <!-- Search and filter dropdown for activity categories -->
                             <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
                             {% set ns = namespace(current_group='') %}
                             {% for name in all_categories %}
@@ -85,12 +91,14 @@
                     </div>
                 </fieldset>
 
+                <!-- Section 3: Select Age Group(s) -->
                 <fieldset>
                     <legend>3. Select Your Preferred Age Group(s)</legend>
                     <label><input type="checkbox" name="any_age_groups" id="any_age_groups" checked> Any</label>
                     <div class="dropdown-checkbox">
                         <div class="dropdown-toggle">Select Age Group(s) <span class="example">(e.g. {{ all_age_groups[0] }})</span></div>
                         <div class="dropdown-content">
+                            <!-- Search and filter dropdown for age groups -->
                             <input type="text" class="dropdown-search" placeholder="Search..." onkeyup="filterDropdown(this)">
                             {% for name in all_age_groups %}
                                 <label><input type="checkbox" name="age_groups" value="{{ name }}"> {{ name }}</label>
@@ -99,24 +107,27 @@
                     </div>
                 </fieldset>
 
+                <!-- Section 4: Select Number of Open Slots -->
                 <fieldset class="thin-fieldset">
                     <legend>4. Number of Open Slots</legend>
                     <div class="flex-row">
-                        <input id="open-slots" name="open_slots" type="number" min="0" step="1" placeholder="e.g. 1"
-                            style="width: 100%; padding: 0.4em 0.6em; font-size: 0.9rem;">
+                        <input id="open-slots" name="open_slots" type="number" min="0" step="1" placeholder="e.g. 1" style="width: 100%; padding: 0.4em 0.6em; font-size: 0.9rem;">
                     </div>
                 </fieldset>
             </div>
 
-            <!-- RIGHT BLOCK -->
+            <!-- RIGHT BLOCK: Map and search criteria summary -->
             <div class="form-panel">
                 <h2 class="form-section-header">Your Search Criteria:</h2>
                 <div id="form-summary" style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem;"></div>
+                
+                <!-- Map Display Area -->
                 <div style="position: relative; height: 350px; margin-bottom: 0.5rem;">
                     <div id="map" style="height: 100%; border: 1px solid #ccc; border-radius: 10px;"></div>
                     <button type="button" id="clear-parks-btn" onclick="ParkSelector.clearSelection()">✕ Clear</button>
                 </div>
 
+                <!-- Dropdown for selecting specific parks -->
                 <label style="margin-bottom: 0.3rem;"></label>
                 <div class="dropdown-checkbox dropdown-up">
                     <div class="dropdown-toggle">
@@ -129,16 +140,16 @@
             </div>
         </div>
 
-         <!-- Hidden list of parks -->
+        <!-- Hidden input fields for user coordinates -->
         <div style="width: 100%; margin-top: 0.0rem;">
             <input type="hidden" id="user-lat" name="user_lat">
             <input type="hidden" id="user-lon" name="user_lon">
         </div>
 
+        <!-- Submit Button for the Form -->
         <div style="display: flex; justify-content: center; align-items: center; height: 100px;">
             <button type="submit" style="width: 90%;">Search</button>
         </div>
-     
     </form>
-    </body>
+</body>
 </html>

@@ -1,49 +1,64 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Activity Results</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- External Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <!-- Your extracted custom CSS -->
+  <!-- Custom CSS for results page -->
   <link rel="stylesheet" href="{{ url_for('static', filename='results.css') }}">
 </head>
 
 <body>
+  <!-- Main container for content -->
   <div class="main-container">
+    
+    <!-- Section for displaying activity results -->
     <div id="results">
       <h1>Matching Activities</h1>
+      <!-- Link to go back to search -->
       <a href="/" class="back-link" onclick="resetPage();">← Back to Search</a>
 
+      <!-- If there are activities to show -->
       {% if activities %}
       <div id="results-container">
+        <!-- Loop through all activities -->
         {% for activity in activities %}
         <div class="activity-card" data-activity-id="{{ activity.id }}" data-place-name="{{ activity.location }}">
+          
+          <!-- Card header with activity name and location -->
           <div class="card-header">
             <h2>{{ activity.name }}</h2>
             <p class="location">{{ activity.location }}</p>
           </div>
+          
+          <!-- Display activity category and age description -->
           <p class="category"><strong>Category:</strong> {{ activity.category }}</p>
           <p class="age"><strong>Age:</strong> {{ activity.age_description }}</p>
 
+          <!-- Schedule Table -->
           <div class="schedule">
             <table>
               <thead>
                 <tr><th>Date</th><th>Time</th><th>Register</th><th>More Info</th></tr>
               </thead>
               <tbody>
+                <!-- Loop through date and time ranges -->
                 {% for i in range(activity.date_ranges | length) %}
                 <tr>
                   <td>{{ activity.date_ranges[i] }}</td>
                   <td>{{ activity.time_ranges[i] }}</td>
                   <td>
+                    <!-- If there is a registration link, show it -->
                     {% if activity.action_links[i] %}
                     <a href="{{ activity.action_links[i] }}" target="_blank">Register</a>
                     {% else %}-{% endif %}
                   </td>
                   <td>
+                    <!-- If there is a detail link, show it -->
                     {% if activity.detail_links[i] %}
                     <a href="{{ activity.detail_links[i] }}" target="_blank">More Info</a>
                     {% else %}-{% endif %}
@@ -54,31 +69,37 @@
             </table>
           </div>
 
+          <!-- Activity description -->
           <p class="desc">{{ activity.desc|safe }}</p>
         </div>
         {% endfor %}
       </div>
 
+      <!-- If there are more activities to load -->
       {% if show_load_more %}
       <button id="load-more-btn" onclick="loadMoreActivities()">Load More Activities</button>
       {% endif %}
+      
       {% else %}
+      <!-- If no activities found, show message -->
       <p style="text-align:center;margin-top:2rem;">We couldn't find any activities with those criteria. Try including more locations or activities.</p>
       {% endif %}
     </div>
 
+    <!-- Map Section -->
     <div id="map"></div>
   </div>
 
   <!-- External Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Pass park data to the page -->
+  <!-- Pass park data from server to JavaScript -->
   <script>
     window.parkData = {{ activity_parks | tojson }};
   </script>
 
-  <!-- Your extracted custom JS -->
+  <!-- Custom JS for results page -->
   <script src="{{ url_for('static', filename='results.js') }}"></script>
+
 </body>
 </html>

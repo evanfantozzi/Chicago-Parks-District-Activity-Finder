@@ -3,7 +3,6 @@ from flask_session import Session
 from scrape import ActivityScraper
 from database_utils import get_activity_parks
 import sqlite3
-import os 
 
 app = Flask(__name__)
 app.config["SESSION_TYPE"] = "filesystem"
