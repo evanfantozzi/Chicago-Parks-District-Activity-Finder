@@ -15,5 +15,8 @@ With that in mind, the app lets you:
 
 I built this using **Flask**, **Leaflet**, and a spatial SQLite database to support distance-based park search. The scraper interacts with the Park District’s internal API, and the frontend is styled to work cleanly across both desktop and mobile.
 
-Want to try it out? [Check out the live version here](https://www.chicagoactivities.onrender.com)  
+Want to try it out? [Check out the live version here](https://www.chicagoactivities.onrender.com)
+
+![Demo GIF](static/read_me.gif)
+
 Find a bug? [Shoot me a message](https://github.com/evanfantozzi).
