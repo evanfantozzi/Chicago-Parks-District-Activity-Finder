@@ -19,4 +19,4 @@ Want to try it out? [Check out the live version here](https://www.chicagoactivit
 
 ![Demo GIF](static/read_me.gif)
 
-Find a bug? [Shoot me a message](https://github.com/evanfantozzi).
+Find a bug? [Shoot me a message](mailto:evanfantozzi@uchicago.edu).
