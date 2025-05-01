@@ -65,19 +65,19 @@ def index():
 
         # Fetch categories
         cur.execute("""
-            SELECT DISTINCT activity 
+            SELECT DISTINCT name 
             FROM activities 
             WHERE type = 'ActivityOtherCategoryID' 
-            ORDER BY activity
+            ORDER BY name
         """)
         all_categories = [row[0] for row in cur.fetchall()]
 
         # Fetch age groups
         cur.execute("""
-            SELECT DISTINCT activity 
+            SELECT DISTINCT name 
             FROM activities 
             WHERE type = 'ActivityCategoryID' 
-            ORDER BY activity
+            ORDER BY name
         """)
         all_age_groups = [row[0] for row in cur.fetchall()]
 
