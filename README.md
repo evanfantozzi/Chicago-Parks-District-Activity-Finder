@@ -1,4 +1,4 @@
-## 🌳 Welcome to *Chicago Activity Finder!*
+## 🌳 Welcome to the improved *Chicago Parks District Activity Finder!*
 
 Did you know the Chicago Park District offers tons of amazing events year-round? Unfortunately, they can be surprisingly hard to find. A friend of mine shared their frustration with the existing Park District websites, which [don't allow distance-based searches](https://anc.apm.activecommunities.com/chicagoparkdistrict/activity/search?) and are [hard to navigate through](https://www.chicagoparkdistrict.com/news/category/programs).
 
