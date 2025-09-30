@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy app code (including your image in /static)
+# Copy app code 
 COPY . .
 
 # Install Python dependencies
